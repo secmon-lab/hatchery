@@ -24,8 +24,8 @@ func (h *Hatchery) CLI(argv []string) error {
 		},
 		Action: func(c *cli.Context) error {
 			for _, target := range targets.Value() {
-				if _, ok := h.pipelines[PipelineID(target)]; !ok {
-					return goerr.Wrap(ErrPipelineNotFound).With("id", target).Unstack()
+				if _, ok := h.pipelines[StreamID(target)]; !ok {
+					return goerr.Wrap(ErrStreamNotFound).With("id", target).Unstack()
 				}
 			}
 

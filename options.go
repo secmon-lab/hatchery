@@ -2,13 +2,13 @@ package hatchery
 
 import "github.com/m-mizutani/goerr"
 
-func WithPipeline(id PipelineID, src Source, dst Destination) Option {
+func WithStream(id StreamID, src Source, dst Destination) Option {
 	return func(h *Hatchery) error {
 		if _, ok := h.pipelines[id]; ok {
-			return goerr.Wrap(ErrPipelineConflicted).With("id", id).Unstack()
+			return goerr.Wrap(ErrStreamConflicted).With("id", id).Unstack()
 		}
 
-		p := &Pipeline{
+		p := &Stream{
 			src: src,
 			dst: dst,
 		}

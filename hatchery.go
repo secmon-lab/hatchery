@@ -9,7 +9,7 @@ import (
 
 // Hatchery is a main manager of this tool.
 type Hatchery struct {
-	pipelines map[PipelineID]*Pipeline
+	pipelines map[StreamID]*Stream
 }
 
 type Option func(*Hatchery) error
@@ -27,8 +27,8 @@ func New(opts ...Option) (*Hatchery, error) {
 
 func (h *Hatchery) Run(ctx context.Context, pipelineIDs []string) error {
 	for _, id := range pipelineIDs {
-		if _, ok := h.pipelines[PipelineID(id)]; !ok {
-			return ErrPipelineNotFound
+		if _, ok := h.pipelines[StreamID(id)]; !ok {
+			return ErrStreamNotFound
 		}
 	}
 
@@ -40,7 +40,7 @@ func (h *Hatchery) Run(ctx context.Context, pipelineIDs []string) error {
 		go func(id string) {
 			defer wg.Done()
 
-			if err := h.pipelines[PipelineID(id)].Run(ctx); err != nil {
+			if err := h.pipelines[StreamID(id)].Run(ctx); err != nil {
 				errCh <- goerr.Wrap(err, "pipeline failed").With("id", id)
 			}
 		}(pID)

@@ -3,7 +3,8 @@ package hatchery
 import (
 	"context"
 	"io"
-	"time"
+
+	"github.com/secmon-as-code/hatchery/pkg/metadata"
 )
 
 // Source is an interface that loads data from a source to a destination.
@@ -14,5 +15,5 @@ type Source interface {
 
 // Destination is an interface that writes data to data storage, messaging queue or something like that.
 type Destination interface {
-	NewWriter(ctx context.Context, ts time.Time) (io.WriteCloser, error)
+	NewWriter(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error)
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-as-code/hatchery"
+	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/types"
 )
 
@@ -112,7 +113,8 @@ func (x *Slack) crawl(ctx context.Context, end time.Time, cursor string, dst hat
 		return nil, goerr.Wrap(err, "failed to unmarshal response body")
 	}
 
-	w, err := dst.NewWriter(ctx, end)
+	md := metadata.New(metadata.WithTimestamp(end))
+	w, err := dst.NewWriter(ctx, md)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to create object writer")
 	}
