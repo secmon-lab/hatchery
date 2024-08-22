@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// HTTPClient is an interface for HTTP client. It's used to inject mock client for testing.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
@@ -19,6 +20,7 @@ func httpClientFromCtx(ctx context.Context) HTTPClient {
 	return http.DefaultClient
 }
 
+// InjectHTTPClient injects HTTP client to context. It's used to inject mock client for testing.
 func InjectHTTPClient(ctx context.Context, c HTTPClient) context.Context {
 	return context.WithValue(ctx, ctxHTTPClientKey{}, c)
 }
@@ -34,6 +36,7 @@ func timeFuncFromCtx(ctx context.Context) timeFunc {
 	return time.Now
 }
 
+// InjectTimeFunc injects time function to context. It's used to inject mock time function for testing.
 func InjectTimeFunc(ctx context.Context, f timeFunc) context.Context {
 	return context.WithValue(ctx, ctxTimeFuncKey{}, f)
 }

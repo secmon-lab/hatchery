@@ -11,17 +11,26 @@ import (
 	"time"
 
 	"github.com/m-mizutani/goerr"
-	"github.com/m-mizutani/hatchery"
+	"github.com/secmon-as-code/hatchery"
+	"github.com/secmon-as-code/hatchery/pkg/types"
 )
 
+// Slack is a source to load audit logs from Slack API.
 type Slack struct {
 	// AccessToken is a secret value for Slack API.
-	AccessToken string `masq:"secret"`
-	MaxPages    *int
-	Limit       *int
-	Duration    *time.Duration
+	AccessToken types.SecretString
+
+	// MaxPages is the maximum number of pages to read. If it's nil, it reads logs until there are no more logs.
+	MaxPages *int
+
+	// Limit is the number of logs to read in a single request. If it's nil, it reads logs with the limit of 100 logs.
+	Limit *int
+
+	// Duration is the duration to read logs. If it's nil, it reads logs for the last 10 minutes.
+	Duration *time.Duration
 }
 
+// Load reads audit logs from Slack API and write them to the destination. It reads logs for the duration specified by Duration. If Duration is nil, it reads logs for the last 10 minutes. It reads logs for the maximum number of pages specified by MaxPages. If MaxPages is nil, it reads logs until there are no more logs. It reads logs with the limit specified by Limit. If Limit is nil, it reads logs with the limit of 100 logs.
 func (x *Slack) Load(ctx context.Context, dst hatchery.Destination) error {
 	var nextCursor string
 	now := timeFuncFromCtx(ctx)()
@@ -78,7 +87,7 @@ func (x *Slack) crawl(ctx context.Context, end time.Time, cursor string, dst hat
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+x.AccessToken)
+	httpReq.Header.Set("Authorization", "Bearer "+x.AccessToken.UnsafeString())
 
 	client := httpClientFromCtx(ctx)
 
@@ -86,6 +95,7 @@ func (x *Slack) crawl(ctx context.Context, end time.Time, cursor string, dst hat
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to send HTTP request")
 	}
+	defer httpResp.Body.Close()
 
 	if httpResp.StatusCode != http.StatusOK {
 		data, _ := io.ReadAll(httpResp.Body)

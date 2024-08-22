@@ -1,4 +1,4 @@
-module github.com/m-mizutani/hatchery
+module github.com/secmon-as-code/hatchery
 
 go 1.22.0
 
