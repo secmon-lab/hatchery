@@ -108,7 +108,11 @@ func (x *Slack) crawl(ctx context.Context, end time.Time, cursor string, dst hat
 		return nil, goerr.Wrap(err, "failed to read response body")
 	}
 
-	var resp apiResponse
+	var resp struct {
+		ResponseMetadata struct {
+			NextCursor string `json:"next_cursor"`
+		} `json:"response_metadata"`
+	}
 	if err := json.Unmarshal(body, &resp); err != nil {
 		return nil, goerr.Wrap(err, "failed to unmarshal response body")
 	}
@@ -133,10 +137,4 @@ func (x *Slack) crawl(ctx context.Context, end time.Time, cursor string, dst hat
 	}
 
 	return nil, nil
-}
-
-type apiResponse struct {
-	ResponseMetadata struct {
-		NextCursor string `json:"next_cursor"`
-	} `json:"response_metadata"`
 }

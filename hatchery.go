@@ -25,17 +25,17 @@ func New(opts ...Option) (*Hatchery, error) {
 	return h, nil
 }
 
-func (h *Hatchery) Run(ctx context.Context, pipelineIDs []string) error {
-	for _, id := range pipelineIDs {
+func (h *Hatchery) Run(ctx context.Context, streamIDs []string) error {
+	for _, id := range streamIDs {
 		if _, ok := h.pipelines[StreamID(id)]; !ok {
 			return ErrStreamNotFound
 		}
 	}
 
 	var wg sync.WaitGroup
-	var errCh = make(chan error, len(pipelineIDs))
+	var errCh = make(chan error, len(streamIDs))
 
-	for _, pID := range pipelineIDs {
+	for _, pID := range streamIDs {
 		wg.Add(1)
 		go func(id string) {
 			defer wg.Done()

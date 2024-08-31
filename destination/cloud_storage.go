@@ -3,6 +3,8 @@ package destination
 import (
 	"context"
 	"io"
+
+	"github.com/secmon-as-code/hatchery/pkg/metadata"
 )
 
 // CloudStorage is a destination that writes data to a Google cloud storage bucket.
@@ -19,7 +21,10 @@ func NewCloudStorage(bucket, prefix string) *CloudStorage {
 	}
 }
 
-func (c *CloudStorage) NewWriter(ctx context.Context) (io.WriteCloser, error) {
-	// Write data to Google cloud storage bucket.
+func (c *CloudStorage) NewWriter(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error) {
+	// Open a new file in the cloud storage bucket.
+
+	client, err := storage.NewClient(ctx)
+
 	return nil, nil
 }
