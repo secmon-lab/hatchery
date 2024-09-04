@@ -21,7 +21,7 @@ var _ hatchery.Source = &SourceMock{}
 //
 //		// make and configure a mocked hatchery.Source
 //		mockedSource := &SourceMock{
-//			LoadFunc: func(ctx context.Context, dst hatchery.Destination) error {
+//			LoadFunc: func(ctx context.Context, p *hatchery.Pipe) error {
 //				panic("mock out the Load method")
 //			},
 //		}
@@ -32,7 +32,7 @@ var _ hatchery.Source = &SourceMock{}
 //	}
 type SourceMock struct {
 	// LoadFunc mocks the Load method.
-	LoadFunc func(ctx context.Context, dst hatchery.Destination) error
+	LoadFunc func(ctx context.Context, p *hatchery.Pipe) error
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -40,29 +40,29 @@ type SourceMock struct {
 		Load []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Dst is the dst argument value.
-			Dst hatchery.Destination
+			// P is the p argument value.
+			P *hatchery.Pipe
 		}
 	}
 	lockLoad sync.RWMutex
 }
 
 // Load calls LoadFunc.
-func (mock *SourceMock) Load(ctx context.Context, dst hatchery.Destination) error {
+func (mock *SourceMock) Load(ctx context.Context, p *hatchery.Pipe) error {
 	if mock.LoadFunc == nil {
 		panic("SourceMock.LoadFunc: method is nil but Source.Load was just called")
 	}
 	callInfo := struct {
 		Ctx context.Context
-		Dst hatchery.Destination
+		P   *hatchery.Pipe
 	}{
 		Ctx: ctx,
-		Dst: dst,
+		P:   p,
 	}
 	mock.lockLoad.Lock()
 	mock.calls.Load = append(mock.calls.Load, callInfo)
 	mock.lockLoad.Unlock()
-	return mock.LoadFunc(ctx, dst)
+	return mock.LoadFunc(ctx, p)
 }
 
 // LoadCalls gets all the calls that were made to Load.
@@ -71,11 +71,11 @@ func (mock *SourceMock) Load(ctx context.Context, dst hatchery.Destination) erro
 //	len(mockedSource.LoadCalls())
 func (mock *SourceMock) LoadCalls() []struct {
 	Ctx context.Context
-	Dst hatchery.Destination
+	P   *hatchery.Pipe
 } {
 	var calls []struct {
 		Ctx context.Context
-		Dst hatchery.Destination
+		P   *hatchery.Pipe
 	}
 	mock.lockLoad.RLock()
 	calls = mock.calls.Load

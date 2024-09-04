@@ -12,11 +12,11 @@ type Stream struct {
 }
 
 // ID returns the ID of the stream.
-func (p *Stream) ID() StreamID {
-	return p.id
+func (x *Stream) ID() StreamID {
+	return x.id
 }
 
 // Run executes the stream, which invokes Source.Load and saves data via Destination.
-func (p *Stream) Run(ctx context.Context) error {
-	return p.src.Load(ctx, p.dst)
+func (x *Stream) Run(ctx context.Context) error {
+	return x.src.Load(ctx, NewPipe(x.dst))
 }

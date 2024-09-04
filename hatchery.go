@@ -2,6 +2,7 @@ package hatchery
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 
 	"github.com/m-mizutani/goerr"
@@ -10,13 +11,16 @@ import (
 // Hatchery is a main manager of this tool.
 type Hatchery struct {
 	pipelines map[StreamID]*Stream
+	logger    *slog.Logger
 }
 
 type Option func(*Hatchery) error
 
 // New creates a new Hatchery instance.
 func New(opts ...Option) (*Hatchery, error) {
-	h := &Hatchery{}
+	h := &Hatchery{
+		logger: slog.Default(),
+	}
 	for _, opt := range opts {
 		if err := opt(h); err != nil {
 			return nil, err
