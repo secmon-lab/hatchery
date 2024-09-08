@@ -17,7 +17,7 @@ func NewPipe(dst Destination) *Pipe {
 }
 
 func (p *Pipe) Spout(ctx context.Context, src io.Reader, md metadata.MetaData) error {
-	w, err := p.dst.NewWriter(ctx, md)
+	w, err := p.dst(ctx, md)
 	if err != nil {
 		return err
 	}

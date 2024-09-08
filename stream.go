@@ -18,5 +18,5 @@ func (x *Stream) ID() StreamID {
 
 // Run executes the stream, which invokes Source.Load and saves data via Destination.
 func (x *Stream) Run(ctx context.Context) error {
-	return x.src.Load(ctx, NewPipe(x.dst))
+	return x.src(ctx, NewPipe(x.dst))
 }
