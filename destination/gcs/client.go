@@ -41,6 +41,22 @@ func DefaultObjectName(args ObjNameArgs) string {
 	return fmt.Sprintf("%s%s_%04d.%s", args.Prefix, timeKey, args.Seq, args.Ext)
 }
 
+type gzipWriter struct {
+	writer     io.WriteCloser
+	gzipWriter *gzip.Writer
+}
+
+func (w *gzipWriter) Write(p []byte) (n int, err error) {
+	return w.gzipWriter.Write(p)
+}
+
+func (w *gzipWriter) Close() error {
+	if err := w.gzipWriter.Close(); err != nil {
+		return err
+	}
+	return w.writer.Close()
+}
+
 // New creates a new Client destination.
 func New(bucket string, options ...Option) hatchery.Destination {
 	c := &Client{
@@ -76,7 +92,10 @@ func New(bucket string, options ...Option) hatchery.Destination {
 		var w io.WriteCloser = objWriter
 		if c.gzip {
 			objWriter.ObjectAttrs.ContentEncoding = "gzip"
-			w = gzip.NewWriter(objWriter)
+			w = &gzipWriter{
+				writer:     objWriter,
+				gzipWriter: gzip.NewWriter(objWriter),
+			}
 		}
 		return w, nil
 	}
