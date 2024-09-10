@@ -64,7 +64,7 @@ func WithHTTPClient(httpClient interfaces.HTTPClient) Option {
 	}
 }
 
-func New(apiToken types.SecretString, opts ...Option) *Client {
+func New(apiToken types.SecretString, opts ...Option) hatchery.Source {
 	x := &Client{
 		apiToken:   apiToken,
 		maxPages:   0,
@@ -77,25 +77,23 @@ func New(apiToken types.SecretString, opts ...Option) *Client {
 		opt(x)
 	}
 
-	return x
-}
+	return func(ctx context.Context, p *hatchery.Pipe) error {
+		var nextCursor string
+		now := timestamp.FromCtx(ctx)
 
-func (x *Client) Load(ctx context.Context, p *hatchery.Pipe) error {
-	var nextCursor string
-	now := timestamp.FromCtx(ctx)
+		for seq := 0; x.maxPages == 0 || seq < x.maxPages; seq++ {
+			cursor, err := x.crawl(ctx, p, now, seq, nextCursor)
+			if err != nil {
+				return goerr.Wrap(err, "failed to crawl 1Password logs").With("seq", seq).With("cursor", nextCursor)
+			}
+			if cursor == nil {
+				break
+			}
+			nextCursor = *cursor
+		}
 
-	for seq := 0; x.maxPages == 0 || seq < x.maxPages; seq++ {
-		cursor, err := x.crawl(ctx, p, now, seq, nextCursor)
-		if err != nil {
-			return goerr.Wrap(err, "failed to crawl 1Password logs").With("seq", seq).With("cursor", nextCursor)
-		}
-		if cursor == nil {
-			break
-		}
-		nextCursor = *cursor
+		return nil
 	}
-
-	return nil
 }
 
 func (x *Client) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq int, cursor string) (*string, error) {

@@ -40,15 +40,16 @@ func loadOrSkip(t *testing.T, key string) string {
 
 func TestSlackIntegration(t *testing.T) {
 	var bufList []*writeCloseBuffer
-	dst := &mock.DestinationMock{
-		NewWriterFunc: func(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error) {
-			buf := &writeCloseBuffer{}
-			bufList = append(bufList, buf)
-			return buf, nil
-		},
+	var called int
+	now := time.Now()
+	dst := func(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error) {
+		called++
+		gt.Equal(t, md.Timestamp(), now)
+		buf := &writeCloseBuffer{}
+		bufList = append(bufList, buf)
+		return buf, nil
 	}
 
-	now := time.Now()
 	ctx := context.Background()
 	ctx = timestamp.InjectCtx(ctx, now)
 
@@ -58,14 +59,14 @@ func TestSlackIntegration(t *testing.T) {
 		duration = time.Hour * 24
 	)
 
-	client := slack.New(
+	src := slack.New(
 		types.NewSecretString(loadOrSkip(t, "TEST_SLACK_ACCESS_TOKEN")),
 		slack.WithMaxPages(maxPages),
 		slack.WithLimit(limit),
 		slack.WithDuration(duration),
 	)
 
-	gt.NoError(t, client.Load(ctx, hatchery.NewPipe(dst)))
+	gt.NoError(t, src(ctx, hatchery.NewPipe(dst)))
 	gt.A(t, bufList).Longer(0)
 
 	for _, buf := range bufList {
@@ -82,12 +83,7 @@ func TestSlackIntegration(t *testing.T) {
 		gt.S(t, resp.ResponseMetadata.NextCursor).IsNotEmpty()
 		gt.A(t, resp.Entries).Longer(0)
 		gt.S(t, resp.Entries[0].ID).IsNotEmpty()
-		gt.A(t, dst.NewWriterCalls()).Longer(0).At(1, func(t testing.TB, v struct {
-			Ctx context.Context
-			Md  metadata.MetaData
-		}) {
-			gt.Equal(t, v.Md.Timestamp(), now)
-		})
+		gt.Equal(t, called, 1)
 	}
 }
 
@@ -131,15 +127,13 @@ func TestSlackCrawler(t *testing.T) {
 	}
 
 	var bufList []*writeCloseBuffer
-	dstMock := &mock.DestinationMock{
-		NewWriterFunc: func(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error) {
-			buf := &writeCloseBuffer{}
-			bufList = append(bufList, buf)
-			return buf, nil
-		},
+	dstMock := func(ctx context.Context, md metadata.MetaData) (io.WriteCloser, error) {
+		buf := &writeCloseBuffer{}
+		bufList = append(bufList, buf)
+		return buf, nil
 	}
 
-	client := slack.New(
+	src := slack.New(
 		types.NewSecretString("dummy"),
 		slack.WithMaxPages(maxPages),
 		slack.WithLimit(limit),
@@ -147,7 +141,7 @@ func TestSlackCrawler(t *testing.T) {
 		slack.WithHTTPClient(httpMock),
 	)
 
-	gt.NoError(t, client.Load(ctx, hatchery.NewPipe(dstMock)))
+	gt.NoError(t, src(ctx, hatchery.NewPipe(dstMock)))
 
 	gt.A(t, httpMock.DoCalls()).Length(2).
 		At(0, func(t testing.TB, v struct{ Req *http.Request }) {
@@ -170,12 +164,6 @@ func TestSlackCrawler(t *testing.T) {
 			gt.True(t, buf.closed)
 			gt.Equal(t, buf.Bytes(), resp2)
 		})
-}
-
-func decodeJSON[T any](t *testing.T, data []byte) T {
-	var v T
-	gt.NoError(t, json.Unmarshal(data, &v))
-	return v
 }
 
 /*

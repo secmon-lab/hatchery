@@ -10,44 +10,50 @@ import (
 
 // Hatchery is a main manager of this tool.
 type Hatchery struct {
-	pipelines map[StreamID]*Stream
-	logger    *slog.Logger
+	streams []*Stream
+	logger  *slog.Logger
 }
 
-type Option func(*Hatchery) error
+type Option func(*Hatchery)
 
 // New creates a new Hatchery instance.
-func New(opts ...Option) (*Hatchery, error) {
+func New(opts ...Option) *Hatchery {
 	h := &Hatchery{
 		logger: slog.Default(),
 	}
 	for _, opt := range opts {
-		if err := opt(h); err != nil {
-			return nil, err
-		}
+		opt(h)
 	}
-	return h, nil
+	return h
 }
 
 func (h *Hatchery) Run(ctx context.Context, streamIDs []string) error {
+	var streams []*Stream
+
 	for _, id := range streamIDs {
-		if _, ok := h.pipelines[StreamID(id)]; !ok {
-			return ErrStreamNotFound
+		for _, stream := range h.streams {
+			if stream.ID() == StreamID(id) {
+				streams = append(streams, stream)
+			}
 		}
+	}
+
+	if len(streams) == 0 {
+		return goerr.Wrap(ErrStreamNotFound).With("ids", streamIDs)
 	}
 
 	var wg sync.WaitGroup
 	var errCh = make(chan error, len(streamIDs))
 
-	for _, pID := range streamIDs {
+	for _, s := range streams {
 		wg.Add(1)
-		go func(id string) {
+		go func(stream *Stream) {
 			defer wg.Done()
 
-			if err := h.pipelines[StreamID(id)].Run(ctx); err != nil {
-				errCh <- goerr.Wrap(err, "pipeline failed").With("id", id)
+			if err := stream.Run(ctx); err != nil {
+				errCh <- goerr.Wrap(err, "pipeline failed").With("id", stream.ID())
 			}
-		}(pID)
+		}(s)
 	}
 
 	wg.Wait()

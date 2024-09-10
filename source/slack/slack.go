@@ -36,7 +36,7 @@ type Client struct {
 	httpClient interfaces.HTTPClient
 }
 
-func New(accessToken types.SecretString, options ...Option) *Client {
+func New(accessToken types.SecretString, options ...Option) hatchery.Source {
 	c := &Client{
 		accessToken: accessToken,
 		httpClient:  http.DefaultClient,
@@ -49,7 +49,23 @@ func New(accessToken types.SecretString, options ...Option) *Client {
 		opt(c)
 	}
 
-	return c
+	return func(ctx context.Context, p *hatchery.Pipe) error {
+		var nextCursor string
+		now := timestamp.FromCtx(ctx)
+
+		for seq := 0; c.maxPages == 0 || seq < c.maxPages; seq++ {
+			cursor, err := c.crawl(ctx, now, seq, nextCursor, p)
+			if err != nil {
+				return goerr.Wrap(err, "failed to crawl slack logs").With("seq", seq).With("cursor", nextCursor).With("config", *c)
+			}
+			if cursor == nil {
+				break
+			}
+			nextCursor = *cursor
+		}
+
+		return nil
+	}
 }
 
 type Option func(*Client)
@@ -83,23 +99,6 @@ func WithHTTPClient(httpClient interfaces.HTTPClient) Option {
 }
 
 // Load reads audit logs from Slack API and write them to the destination. It reads logs for the duration specified by Duration. If Duration is nil, it reads logs for the last 10 minutes. It reads logs for the maximum number of pages specified by maxPages. If maxPages is nil, it reads logs until there are no more logs. It reads logs with the limit specified by Limit. If Limit is nil, it reads logs with the limit of 100 logs.
-func (x *Client) Load(ctx context.Context, p *hatchery.Pipe) error {
-	var nextCursor string
-	now := timestamp.FromCtx(ctx)
-
-	for seq := 0; x.maxPages == 0 || seq < x.maxPages; seq++ {
-		cursor, err := x.crawl(ctx, now, seq, nextCursor, p)
-		if err != nil {
-			return goerr.Wrap(err, "failed to crawl slack logs").With("seq", seq).With("cursor", nextCursor).With("config", *x)
-		}
-		if cursor == nil {
-			break
-		}
-		nextCursor = *cursor
-	}
-
-	return nil
-}
 
 const (
 	// Slack API endpoint for Business Plan

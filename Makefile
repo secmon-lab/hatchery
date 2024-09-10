@@ -4,5 +4,5 @@ all: mock
 
 mock: $(MOCK_PKG)
 
-$(MOCK_PKG): interfaces.go ./pkg/interfaces/*
+$(MOCK_PKG): ./pkg/interfaces/*
 	go run github.com/matryer/moq@latest -pkg mock -out $(MOCK_PKG) ./pkg/interfaces HTTPClient SQS S3

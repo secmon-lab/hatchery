@@ -12,7 +12,7 @@ Many SaaS services offer APIs for accessing data and logs, but managing them can
 
 As a result, security administrators are required to gather logs from multiple services and store them in object storage for long-term retention and analysis. However, this process is complicated by the fact that each service has its own APIs and data formats, making it difficult to implement and maintain a tool to gather logs.
 
-Hatchery is a solution designed to address these challenges by collecting data and logs from SaaS services and storing them in object storage. This facilitates log retention and prepares the data for analysis by security administrators.
+`hatchery` is a solution designed to address these challenges by collecting data and logs from SaaS services and storing them in object storage. This facilitates log retention and prepares the data for analysis by security administrators.
 
 For those interested in importing logs from Cloud Storage to BigQuery, please refer to [swarm](https://github.com/m-mizutani/swarm).
 
