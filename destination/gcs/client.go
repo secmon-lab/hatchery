@@ -101,27 +101,24 @@ func New(bucket string, options ...Option) hatchery.Destination {
 	}
 }
 
-type Option func(*Client) error
+type Option func(*Client)
 
 // WithPrefix sets a prefix for object names in the bucket.
 func WithPrefix(prefix string) Option {
-	return func(c *Client) error {
+	return func(c *Client) {
 		c.prefix = prefix
-		return nil
 	}
 }
 
 // WithGzip sets a flag to compress data with gzip.
 func WithGzip(gzip bool) Option {
-	return func(c *Client) error {
+	return func(c *Client) {
 		c.gzip = gzip
-		return nil
 	}
 }
 
 func WithClientOptions(options ...option.ClientOption) Option {
-	return func(c *Client) error {
+	return func(c *Client) {
 		c.options = append(c.options, options...)
-		return nil
 	}
 }
