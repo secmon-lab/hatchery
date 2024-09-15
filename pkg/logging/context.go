@@ -3,6 +3,7 @@ package logging
 import (
 	"context"
 	"log/slog"
+	"sync"
 )
 
 type ctxLoggerKey struct{}
@@ -18,4 +19,20 @@ func FromCtx(ctx context.Context) *slog.Logger {
 		return logger
 	}
 	return slog.Default()
+}
+
+var (
+	defaultLogger *slog.Logger
+	loggerMutex   sync.RWMutex
+)
+
+func init() {
+	defaultLogger = slog.Default()
+}
+
+func Default() *slog.Logger {
+	loggerMutex.RLock()
+	defer loggerMutex.RUnlock()
+
+	return defaultLogger
 }

@@ -10,21 +10,19 @@ import (
 )
 
 func main() {
-	h := hatchery.New(
-		hatchery.WithStream(
+	streams := []hatchery.Stream{
+		{
 			// StreamID
-			"slack-to-gcs",
-
+			ID: "slack-to-gcs",
 			// Source: Slack Audit API
-			slack.New(types.NewSecretString(os.Getenv("SLACK_TOKEN"))),
-
+			Src: slack.New(types.NewSecretString(os.Getenv("SLACK_TOKEN"))),
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
-			gcs.New("mizutani-test"),
-		),
-	)
+			Dst: gcs.New("mizutani-test"),
+		},
+	}
 
 	// You can run CLI with args such as `go run main.go -s slack-to-gcs`
-	if err := h.CLI(os.Args); err != nil {
+	if err := hatchery.New(streams).CLI(os.Args); err != nil {
 		panic(err)
 	}
 }

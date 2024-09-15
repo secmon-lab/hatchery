@@ -21,10 +21,17 @@ func (p *Pipe) Spout(ctx context.Context, src io.Reader, md metadata.MetaData) e
 	if err != nil {
 		return err
 	}
-	defer w.Close()
+
+	defer func() {
+		err = w.Close()
+		if err != nil {
+			err = goerr.Wrap(err, "failed to close destination")
+		}
+	}()
 
 	if _, err = io.Copy(w, src); err != nil {
 		return goerr.Wrap(err, "failed to copy data")
 	}
-	return nil
+
+	return err
 }

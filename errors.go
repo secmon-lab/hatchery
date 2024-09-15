@@ -3,6 +3,7 @@ package hatchery
 import "errors"
 
 var (
-	ErrStreamConflicted = errors.New("pipeline id conflicted")
-	ErrStreamNotFound   = errors.New("pipeline not found")
+	ErrStreamConflicted = errors.New("stream id conflicted")
+	ErrStreamNotFound   = errors.New("stream not found")
+	ErrInvalidStream    = errors.New("invalid stream")
 )
