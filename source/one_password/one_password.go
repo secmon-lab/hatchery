@@ -33,7 +33,7 @@ type config struct {
 	MaxPages   int
 	Limit      int
 	Duration   time.Duration
-	httpClient interfaces.HTTPClient
+	HTTPClient interfaces.HTTPClient
 }
 
 type Option func(*config)
@@ -62,7 +62,7 @@ func WithDuration(d time.Duration) Option {
 // WithHTTPClient sets the HTTP client to send requests. Default is http.DefaultClient. This option is mainly for testing.
 func WithHTTPClient(httpClient interfaces.HTTPClient) Option {
 	return func(x *config) {
-		x.httpClient = httpClient
+		x.HTTPClient = httpClient
 	}
 }
 
@@ -73,7 +73,7 @@ func New(apiToken secret.String, opts ...Option) hatchery.Source {
 		MaxPages:   0,
 		Limit:      100,
 		Duration:   time.Minute * 10,
-		httpClient: http.DefaultClient,
+		HTTPClient: http.DefaultClient,
 	}
 
 	for _, opt := range opts {
@@ -131,7 +131,7 @@ func (x *config) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+x.APIToken.Unsafe())
 
-	httpResp, err := x.httpClient.Do(httpReq)
+	httpResp, err := x.HTTPClient.Do(httpReq)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to send HTTP request")
 	}
