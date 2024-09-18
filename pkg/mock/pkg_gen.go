@@ -5,9 +5,8 @@ package mock
 
 import (
 	"context"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/secmon-as-code/hatchery/pkg/interfaces"
 	"net/http"
 	"sync"
@@ -89,11 +88,11 @@ var _ interfaces.SQS = &SQSMock{}
 //
 //		// make and configure a mocked interfaces.SQS
 //		mockedSQS := &SQSMock{
-//			DeleteMessageWithContextFunc: func(ctx context.Context, input *sqs.DeleteMessageInput, opts ...request.Option) (*sqs.DeleteMessageOutput, error) {
-//				panic("mock out the DeleteMessageWithContext method")
+//			DeleteMessageFunc: func(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(*sqs.Options)) (*sqs.DeleteMessageOutput, error) {
+//				panic("mock out the DeleteMessage method")
 //			},
-//			ReceiveMessageWithContextFunc: func(ctx context.Context, input *sqs.ReceiveMessageInput, opts ...request.Option) (*sqs.ReceiveMessageOutput, error) {
-//				panic("mock out the ReceiveMessageWithContext method")
+//			ReceiveMessageFunc: func(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error) {
+//				panic("mock out the ReceiveMessage method")
 //			},
 //		}
 //
@@ -102,114 +101,114 @@ var _ interfaces.SQS = &SQSMock{}
 //
 //	}
 type SQSMock struct {
-	// DeleteMessageWithContextFunc mocks the DeleteMessageWithContext method.
-	DeleteMessageWithContextFunc func(ctx context.Context, input *sqs.DeleteMessageInput, opts ...request.Option) (*sqs.DeleteMessageOutput, error)
+	// DeleteMessageFunc mocks the DeleteMessage method.
+	DeleteMessageFunc func(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(*sqs.Options)) (*sqs.DeleteMessageOutput, error)
 
-	// ReceiveMessageWithContextFunc mocks the ReceiveMessageWithContext method.
-	ReceiveMessageWithContextFunc func(ctx context.Context, input *sqs.ReceiveMessageInput, opts ...request.Option) (*sqs.ReceiveMessageOutput, error)
+	// ReceiveMessageFunc mocks the ReceiveMessage method.
+	ReceiveMessageFunc func(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// DeleteMessageWithContext holds details about calls to the DeleteMessageWithContext method.
-		DeleteMessageWithContext []struct {
+		// DeleteMessage holds details about calls to the DeleteMessage method.
+		DeleteMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Input is the input argument value.
-			Input *sqs.DeleteMessageInput
-			// Opts is the opts argument value.
-			Opts []request.Option
+			// Params is the params argument value.
+			Params *sqs.DeleteMessageInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*sqs.Options)
 		}
-		// ReceiveMessageWithContext holds details about calls to the ReceiveMessageWithContext method.
-		ReceiveMessageWithContext []struct {
+		// ReceiveMessage holds details about calls to the ReceiveMessage method.
+		ReceiveMessage []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Input is the input argument value.
-			Input *sqs.ReceiveMessageInput
-			// Opts is the opts argument value.
-			Opts []request.Option
+			// Params is the params argument value.
+			Params *sqs.ReceiveMessageInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*sqs.Options)
 		}
 	}
-	lockDeleteMessageWithContext  sync.RWMutex
-	lockReceiveMessageWithContext sync.RWMutex
+	lockDeleteMessage  sync.RWMutex
+	lockReceiveMessage sync.RWMutex
 }
 
-// DeleteMessageWithContext calls DeleteMessageWithContextFunc.
-func (mock *SQSMock) DeleteMessageWithContext(ctx context.Context, input *sqs.DeleteMessageInput, opts ...request.Option) (*sqs.DeleteMessageOutput, error) {
-	if mock.DeleteMessageWithContextFunc == nil {
-		panic("SQSMock.DeleteMessageWithContextFunc: method is nil but SQS.DeleteMessageWithContext was just called")
+// DeleteMessage calls DeleteMessageFunc.
+func (mock *SQSMock) DeleteMessage(ctx context.Context, params *sqs.DeleteMessageInput, optFns ...func(*sqs.Options)) (*sqs.DeleteMessageOutput, error) {
+	if mock.DeleteMessageFunc == nil {
+		panic("SQSMock.DeleteMessageFunc: method is nil but SQS.DeleteMessage was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Input *sqs.DeleteMessageInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *sqs.DeleteMessageInput
+		OptFns []func(*sqs.Options)
 	}{
-		Ctx:   ctx,
-		Input: input,
-		Opts:  opts,
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
 	}
-	mock.lockDeleteMessageWithContext.Lock()
-	mock.calls.DeleteMessageWithContext = append(mock.calls.DeleteMessageWithContext, callInfo)
-	mock.lockDeleteMessageWithContext.Unlock()
-	return mock.DeleteMessageWithContextFunc(ctx, input, opts...)
+	mock.lockDeleteMessage.Lock()
+	mock.calls.DeleteMessage = append(mock.calls.DeleteMessage, callInfo)
+	mock.lockDeleteMessage.Unlock()
+	return mock.DeleteMessageFunc(ctx, params, optFns...)
 }
 
-// DeleteMessageWithContextCalls gets all the calls that were made to DeleteMessageWithContext.
+// DeleteMessageCalls gets all the calls that were made to DeleteMessage.
 // Check the length with:
 //
-//	len(mockedSQS.DeleteMessageWithContextCalls())
-func (mock *SQSMock) DeleteMessageWithContextCalls() []struct {
-	Ctx   context.Context
-	Input *sqs.DeleteMessageInput
-	Opts  []request.Option
+//	len(mockedSQS.DeleteMessageCalls())
+func (mock *SQSMock) DeleteMessageCalls() []struct {
+	Ctx    context.Context
+	Params *sqs.DeleteMessageInput
+	OptFns []func(*sqs.Options)
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Input *sqs.DeleteMessageInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *sqs.DeleteMessageInput
+		OptFns []func(*sqs.Options)
 	}
-	mock.lockDeleteMessageWithContext.RLock()
-	calls = mock.calls.DeleteMessageWithContext
-	mock.lockDeleteMessageWithContext.RUnlock()
+	mock.lockDeleteMessage.RLock()
+	calls = mock.calls.DeleteMessage
+	mock.lockDeleteMessage.RUnlock()
 	return calls
 }
 
-// ReceiveMessageWithContext calls ReceiveMessageWithContextFunc.
-func (mock *SQSMock) ReceiveMessageWithContext(ctx context.Context, input *sqs.ReceiveMessageInput, opts ...request.Option) (*sqs.ReceiveMessageOutput, error) {
-	if mock.ReceiveMessageWithContextFunc == nil {
-		panic("SQSMock.ReceiveMessageWithContextFunc: method is nil but SQS.ReceiveMessageWithContext was just called")
+// ReceiveMessage calls ReceiveMessageFunc.
+func (mock *SQSMock) ReceiveMessage(ctx context.Context, params *sqs.ReceiveMessageInput, optFns ...func(*sqs.Options)) (*sqs.ReceiveMessageOutput, error) {
+	if mock.ReceiveMessageFunc == nil {
+		panic("SQSMock.ReceiveMessageFunc: method is nil but SQS.ReceiveMessage was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Input *sqs.ReceiveMessageInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *sqs.ReceiveMessageInput
+		OptFns []func(*sqs.Options)
 	}{
-		Ctx:   ctx,
-		Input: input,
-		Opts:  opts,
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
 	}
-	mock.lockReceiveMessageWithContext.Lock()
-	mock.calls.ReceiveMessageWithContext = append(mock.calls.ReceiveMessageWithContext, callInfo)
-	mock.lockReceiveMessageWithContext.Unlock()
-	return mock.ReceiveMessageWithContextFunc(ctx, input, opts...)
+	mock.lockReceiveMessage.Lock()
+	mock.calls.ReceiveMessage = append(mock.calls.ReceiveMessage, callInfo)
+	mock.lockReceiveMessage.Unlock()
+	return mock.ReceiveMessageFunc(ctx, params, optFns...)
 }
 
-// ReceiveMessageWithContextCalls gets all the calls that were made to ReceiveMessageWithContext.
+// ReceiveMessageCalls gets all the calls that were made to ReceiveMessage.
 // Check the length with:
 //
-//	len(mockedSQS.ReceiveMessageWithContextCalls())
-func (mock *SQSMock) ReceiveMessageWithContextCalls() []struct {
-	Ctx   context.Context
-	Input *sqs.ReceiveMessageInput
-	Opts  []request.Option
+//	len(mockedSQS.ReceiveMessageCalls())
+func (mock *SQSMock) ReceiveMessageCalls() []struct {
+	Ctx    context.Context
+	Params *sqs.ReceiveMessageInput
+	OptFns []func(*sqs.Options)
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Input *sqs.ReceiveMessageInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *sqs.ReceiveMessageInput
+		OptFns []func(*sqs.Options)
 	}
-	mock.lockReceiveMessageWithContext.RLock()
-	calls = mock.calls.ReceiveMessageWithContext
-	mock.lockReceiveMessageWithContext.RUnlock()
+	mock.lockReceiveMessage.RLock()
+	calls = mock.calls.ReceiveMessage
+	mock.lockReceiveMessage.RUnlock()
 	return calls
 }
 
@@ -223,8 +222,8 @@ var _ interfaces.S3 = &S3Mock{}
 //
 //		// make and configure a mocked interfaces.S3
 //		mockedS3 := &S3Mock{
-//			GetObjectWithContextFunc: func(ctx context.Context, input *s3.GetObjectInput, opts ...request.Option) (*s3.GetObjectOutput, error) {
-//				panic("mock out the GetObjectWithContext method")
+//			GetObjectFunc: func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+//				panic("mock out the GetObject method")
 //			},
 //		}
 //
@@ -233,60 +232,60 @@ var _ interfaces.S3 = &S3Mock{}
 //
 //	}
 type S3Mock struct {
-	// GetObjectWithContextFunc mocks the GetObjectWithContext method.
-	GetObjectWithContextFunc func(ctx context.Context, input *s3.GetObjectInput, opts ...request.Option) (*s3.GetObjectOutput, error)
+	// GetObjectFunc mocks the GetObject method.
+	GetObjectFunc func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// GetObjectWithContext holds details about calls to the GetObjectWithContext method.
-		GetObjectWithContext []struct {
+		// GetObject holds details about calls to the GetObject method.
+		GetObject []struct {
 			// Ctx is the ctx argument value.
 			Ctx context.Context
-			// Input is the input argument value.
-			Input *s3.GetObjectInput
-			// Opts is the opts argument value.
-			Opts []request.Option
+			// Params is the params argument value.
+			Params *s3.GetObjectInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*s3.Options)
 		}
 	}
-	lockGetObjectWithContext sync.RWMutex
+	lockGetObject sync.RWMutex
 }
 
-// GetObjectWithContext calls GetObjectWithContextFunc.
-func (mock *S3Mock) GetObjectWithContext(ctx context.Context, input *s3.GetObjectInput, opts ...request.Option) (*s3.GetObjectOutput, error) {
-	if mock.GetObjectWithContextFunc == nil {
-		panic("S3Mock.GetObjectWithContextFunc: method is nil but S3.GetObjectWithContext was just called")
+// GetObject calls GetObjectFunc.
+func (mock *S3Mock) GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+	if mock.GetObjectFunc == nil {
+		panic("S3Mock.GetObjectFunc: method is nil but S3.GetObject was just called")
 	}
 	callInfo := struct {
-		Ctx   context.Context
-		Input *s3.GetObjectInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *s3.GetObjectInput
+		OptFns []func(*s3.Options)
 	}{
-		Ctx:   ctx,
-		Input: input,
-		Opts:  opts,
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
 	}
-	mock.lockGetObjectWithContext.Lock()
-	mock.calls.GetObjectWithContext = append(mock.calls.GetObjectWithContext, callInfo)
-	mock.lockGetObjectWithContext.Unlock()
-	return mock.GetObjectWithContextFunc(ctx, input, opts...)
+	mock.lockGetObject.Lock()
+	mock.calls.GetObject = append(mock.calls.GetObject, callInfo)
+	mock.lockGetObject.Unlock()
+	return mock.GetObjectFunc(ctx, params, optFns...)
 }
 
-// GetObjectWithContextCalls gets all the calls that were made to GetObjectWithContext.
+// GetObjectCalls gets all the calls that were made to GetObject.
 // Check the length with:
 //
-//	len(mockedS3.GetObjectWithContextCalls())
-func (mock *S3Mock) GetObjectWithContextCalls() []struct {
-	Ctx   context.Context
-	Input *s3.GetObjectInput
-	Opts  []request.Option
+//	len(mockedS3.GetObjectCalls())
+func (mock *S3Mock) GetObjectCalls() []struct {
+	Ctx    context.Context
+	Params *s3.GetObjectInput
+	OptFns []func(*s3.Options)
 } {
 	var calls []struct {
-		Ctx   context.Context
-		Input *s3.GetObjectInput
-		Opts  []request.Option
+		Ctx    context.Context
+		Params *s3.GetObjectInput
+		OptFns []func(*s3.Options)
 	}
-	mock.lockGetObjectWithContext.RLock()
-	calls = mock.calls.GetObjectWithContext
-	mock.lockGetObjectWithContext.RUnlock()
+	mock.lockGetObject.RLock()
+	calls = mock.calls.GetObject
+	mock.lockGetObject.RUnlock()
 	return calls
 }

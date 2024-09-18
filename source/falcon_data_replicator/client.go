@@ -6,11 +6,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/pkg/interfaces"
@@ -38,66 +37,52 @@ type file struct {
 
 type awsConfig struct {
 	Region string
-	Cred   *credentials.Credentials
+	Cred   aws.CredentialsProvider
 	SQSURL string
 }
 
-type config struct {
+type client struct {
 	AWS awsConfig
 
-	NewSQS func(*session.Session) interfaces.SQS
-	NewS3  func(*session.Session) interfaces.S3
+	NewSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS
+	NewS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3
 
-	MaxMessages int64
+	MaxMessages int32
 	MaxPull     int
 }
 
-type Option func(*config)
+type Option func(*client)
 
-func WithMaxMessages(n int64) Option {
-	return func(x *config) {
+func WithMaxMessages(n int32) Option {
+	return func(x *client) {
 		x.MaxMessages = n
 	}
 }
 
 func WithMaxPull(n int) Option {
-	return func(x *config) {
+	return func(x *client) {
 		x.MaxPull = n
 	}
 }
 
-func WithAWSCredential(cred *credentials.Credentials) Option {
-	return func(x *config) {
+func WithAWSCredential(cred aws.CredentialsProvider) Option {
+	return func(x *client) {
 		x.AWS.Cred = cred
 	}
 }
 
-// WithSQSClientFactory sets a factory function to create an SQS client. This option is mainly for testing.
-func WithSQSClientFactory(f func(*session.Session) interfaces.SQS) Option {
-	return func(x *config) {
-		x.NewSQS = f
-	}
-}
-
-// WithS3ClientFactory sets a factory function to create an S3 client. This option is mainly for testing.
-func WithS3ClientFactory(f func(*session.Session) interfaces.S3) Option {
-	return func(x *config) {
-		x.NewS3 = f
-	}
-}
-
 func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqsURL string, opts ...Option) hatchery.Source {
-	x := &config{
+	x := &client{
 		AWS: awsConfig{
 			Region: awsRegion,
 			SQSURL: sqsURL,
 		},
 
-		NewSQS: func(ssn *session.Session) interfaces.SQS {
-			return sqs.New(ssn)
+		NewSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
+			return sqs.NewFromConfig(cfg, optFns...)
 		},
-		NewS3: func(ssn *session.Session) interfaces.S3 {
-			return s3.New(ssn)
+		NewS3: func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3 {
+			return s3.NewFromConfig(cfg, optFns...)
 		},
 
 		MaxMessages: 10,
@@ -108,28 +93,33 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		opt(x)
 	}
 
+	awsOpts := []func(*config.LoadOptions) error{
+		config.WithRegion(x.AWS.Region),
+	}
+
+	if x.AWS.Cred != nil {
+		awsOpts = append(awsOpts,
+			config.WithCredentialsProvider(x.AWS.Cred),
+		)
+	}
 	return func(ctx context.Context, p *hatchery.Pipe) error {
 		logging.FromCtx(ctx).Info("Run Falcon Data Replicator source", "config", x)
 
-		// Create an AWS session
-		awsSession, err := session.NewSession(&aws.Config{
-			Region:      aws.String(x.AWS.Region),
-			Credentials: x.AWS.Cred,
-		})
+		cfg, err := config.LoadDefaultConfig(ctx, awsOpts...)
 		if err != nil {
-			return goerr.Wrap(err, "failed to create AWS session").With("client", x)
+			return goerr.Wrap(err, "failed to create AWS session")
 		}
 
 		// Create AWS service clients
-		sqsClient := x.NewSQS(awsSession)
-		s3Client := x.NewS3(awsSession)
+		s3Client := x.NewS3(cfg)
+		sqsClient := x.NewSQS(cfg)
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(x.AWS.SQSURL),
 		}
 		if x.MaxMessages > 0 {
-			input.MaxNumberOfMessages = aws.Int64(x.MaxMessages)
+			input.MaxNumberOfMessages = x.MaxMessages
 		}
 
 		for i := 0; x.MaxPull == 0 || i < x.MaxPull; i++ {
@@ -156,7 +146,7 @@ var (
 )
 
 func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInput, p *hatchery.Pipe) error {
-	result, err := clients.sqs.ReceiveMessageWithContext(ctx, input)
+	result, err := clients.sqs.ReceiveMessage(ctx, input)
 	if err != nil {
 		return goerr.Wrap(err, "failed to receive messages from SQS").With("input", input)
 	}
@@ -178,7 +168,7 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 				Bucket: aws.String(msg.Bucket),
 				Key:    aws.String(file.Path),
 			}
-			s3Obj, err := clients.s3.GetObjectWithContext(ctx, s3Input)
+			s3Obj, err := clients.s3.GetObject(ctx, s3Input)
 			if err != nil {
 				return goerr.Wrap(err, "failed to download object from S3").With("msg", msg)
 			}
@@ -193,7 +183,7 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 		}
 
 		// Delete the message from SQS
-		_, err = clients.sqs.DeleteMessageWithContext(ctx, &sqs.DeleteMessageInput{
+		_, err = clients.sqs.DeleteMessage(ctx, &sqs.DeleteMessageInput{
 			QueueUrl:      input.QueueUrl,
 			ReceiptHandle: message.ReceiptHandle,
 		})
