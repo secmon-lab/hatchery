@@ -83,7 +83,7 @@ func TestSlackIntegration(t *testing.T) {
 		gt.S(t, resp.ResponseMetadata.NextCursor).IsNotEmpty()
 		gt.A(t, resp.Entries).Longer(0)
 		gt.S(t, resp.Entries[0].ID).IsNotEmpty()
-		gt.Equal(t, called, 1)
+		gt.Equal(t, called, 2)
 	}
 }
 
@@ -101,7 +101,7 @@ func TestSlackCrawler(t *testing.T) {
 
 	var (
 		maxPages = 2
-		limit    = 10
+		limit    = 1
 		duration = time.Hour * 24
 	)
 
@@ -146,12 +146,12 @@ func TestSlackCrawler(t *testing.T) {
 	gt.A(t, httpMock.DoCalls()).Length(2).
 		At(0, func(t testing.TB, v struct{ Req *http.Request }) {
 			gt.S(t, v.Req.URL.Path).Equal("/audit/v1/logs")
-			gt.S(t, v.Req.URL.Query().Get("limit")).Equal("10")
+			gt.S(t, v.Req.URL.Query().Get("limit")).Equal("1")
 			gt.S(t, v.Req.URL.Query().Get("cursor")).Equal("")
 		}).
 		At(1, func(t testing.TB, v struct{ Req *http.Request }) {
 			gt.S(t, v.Req.URL.Path).Equal("/audit/v1/logs")
-			gt.S(t, v.Req.URL.Query().Get("limit")).Equal("10")
+			gt.S(t, v.Req.URL.Query().Get("limit")).Equal("1")
 			gt.S(t, v.Req.URL.Query().Get("cursor")).NotEqual("")
 		})
 

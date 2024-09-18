@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/pkg/interfaces"
+	"github.com/secmon-as-code/hatchery/pkg/logging"
 	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/timestamp"
 	"github.com/secmon-as-code/hatchery/pkg/types"
@@ -52,6 +54,13 @@ func New(accessToken types.SecretString, options ...Option) hatchery.Source {
 	return func(ctx context.Context, p *hatchery.Pipe) error {
 		var nextCursor string
 		now := timestamp.FromCtx(ctx)
+
+		logging.FromCtx(ctx).Info("Run slack source",
+			slog.Duration("duration", c.duration),
+			slog.Int("limit", c.limit),
+			slog.Int("maxPages", c.maxPages),
+			slog.Time("now", now),
+		)
 
 		for seq := 0; c.maxPages == 0 || seq < c.maxPages; seq++ {
 			cursor, err := c.crawl(ctx, now, seq, nextCursor, p)

@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/pkg/interfaces"
+	"github.com/secmon-as-code/hatchery/pkg/logging"
 	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/timestamp"
 	"github.com/secmon-as-code/hatchery/pkg/types"
@@ -80,6 +82,13 @@ func New(apiToken types.SecretString, opts ...Option) hatchery.Source {
 	return func(ctx context.Context, p *hatchery.Pipe) error {
 		var nextCursor string
 		now := timestamp.FromCtx(ctx)
+
+		logging.FromCtx(ctx).Info("Run 1Password source",
+			slog.Duration("duration", x.duration),
+			slog.Int("limit", x.limit),
+			slog.Int("maxPages", x.maxPages),
+			slog.Time("now", now),
+		)
 
 		for seq := 0; x.maxPages == 0 || seq < x.maxPages; seq++ {
 			cursor, err := x.crawl(ctx, p, now, seq, nextCursor)
