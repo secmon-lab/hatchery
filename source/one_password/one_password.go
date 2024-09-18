@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log/slog"
 	"net/http"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/timestamp"
 	"github.com/secmon-as-code/hatchery/pkg/types"
+	"github.com/secmon-as-code/hatchery/pkg/types/secret"
 )
 
 const (
@@ -28,50 +28,51 @@ const (
 	timeFormat = "2006-01-02T15:04:05-07:00"
 )
 
-type Client struct {
-	apiToken   types.SecretString
-	maxPages   int
-	limit      int
-	duration   time.Duration
+type config struct {
+	APIToken   secret.String
+	MaxPages   int
+	Limit      int
+	Duration   time.Duration
 	httpClient interfaces.HTTPClient
 }
 
-type Option func(*Client)
+type Option func(*config)
 
 // WithMaxPages sets the maximum number of pages to load. If 0, it loads all pages. Default is 0.
 func WithMaxPages(n int) Option {
-	return func(x *Client) {
-		x.maxPages = n
+	return func(x *config) {
+		x.MaxPages = n
 	}
 }
 
 // WithLimit sets the number of logs to load per page. Default is 100.
 func WithLimit(n int) Option {
-	return func(x *Client) {
-		x.limit = n
+	return func(x *config) {
+		x.Limit = n
 	}
 }
 
 // WithDuration sets the duration of logs to load. Default is 10 minutes.
 func WithDuration(d time.Duration) Option {
-	return func(x *Client) {
-		x.duration = d
+	return func(x *config) {
+		x.Duration = d
 	}
 }
 
 // WithHTTPClient sets the HTTP client to send requests. Default is http.DefaultClient. This option is mainly for testing.
 func WithHTTPClient(httpClient interfaces.HTTPClient) Option {
-	return func(x *Client) {
+	return func(x *config) {
 		x.httpClient = httpClient
 	}
 }
 
-func New(apiToken types.SecretString, opts ...Option) hatchery.Source {
-	x := &Client{
-		apiToken:   apiToken,
-		maxPages:   0,
-		limit:      100,
-		duration:   time.Minute * 10,
+// New creates a source to load audit logs from 1Password API.
+func New(apiToken secret.String, opts ...Option) hatchery.Source {
+	x := &config{
+		APIToken:   apiToken,
+		MaxPages:   0,
+		Limit:      100,
+		Duration:   time.Minute * 10,
 		httpClient: http.DefaultClient,
 	}
 
@@ -83,14 +84,9 @@ func New(apiToken types.SecretString, opts ...Option) hatchery.Source {
 		var nextCursor string
 		now := timestamp.FromCtx(ctx)
 
-		logging.FromCtx(ctx).Info("Run 1Password source",
-			slog.Duration("duration", x.duration),
-			slog.Int("limit", x.limit),
-			slog.Int("maxPages", x.maxPages),
-			slog.Time("now", now),
-		)
+		logging.FromCtx(ctx).Info("Run 1Password source", "config", x)
 
-		for seq := 0; x.maxPages == 0 || seq < x.maxPages; seq++ {
+		for seq := 0; x.MaxPages == 0 || seq < x.MaxPages; seq++ {
 			cursor, err := x.crawl(ctx, p, now, seq, nextCursor)
 			if err != nil {
 				return goerr.Wrap(err, "failed to crawl 1Password logs").With("seq", seq).With("cursor", nextCursor)
@@ -105,8 +101,8 @@ func New(apiToken types.SecretString, opts ...Option) hatchery.Source {
 	}
 }
 
-func (x *Client) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq int, cursor string) (*string, error) {
-	startTime := end.Add(-x.duration)
+func (x *config) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq int, cursor string) (*string, error) {
+	startTime := end.Add(-x.Duration)
 	var body []byte
 	if cursor != "" {
 		raw, err := json.Marshal(apiResponseWithCursor{Cursor: cursor})
@@ -116,7 +112,7 @@ func (x *Client) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq
 		body = raw
 	} else {
 		raw, err := json.Marshal(apiRequest{
-			Limit:     x.limit,
+			Limit:     x.Limit,
 			StartTime: startTime.Format(timeFormat),
 			EndTime:   end.Format(timeFormat),
 		})
@@ -133,7 +129,7 @@ func (x *Client) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+x.apiToken.UnsafeString())
+	httpReq.Header.Set("Authorization", "Bearer "+x.APIToken.Unsafe())
 
 	httpResp, err := x.httpClient.Do(httpReq)
 	if err != nil {

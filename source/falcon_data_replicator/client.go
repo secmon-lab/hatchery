@@ -14,9 +14,10 @@ import (
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/pkg/interfaces"
+	"github.com/secmon-as-code/hatchery/pkg/logging"
 	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/safe"
-	"github.com/secmon-as-code/hatchery/pkg/types"
+	"github.com/secmon-as-code/hatchery/pkg/types/secret"
 )
 
 type fdrMessage struct {
@@ -35,63 +36,72 @@ type file struct {
 	Size     int64  `json:"size"`
 }
 
-type Client struct {
-	awsRegion          string
-	awsAccessKeyId     string
-	awsSecretAccessKey types.SecretString
-	sqsURL             string
-
-	newSQS func(*session.Session) interfaces.SQS
-	newS3  func(*session.Session) interfaces.S3
-
-	maxMessages int64
-	maxPull     int
+type awsConfig struct {
+	Region string
+	Cred   *credentials.Credentials
+	SQSURL string
 }
 
-type Option func(*Client)
+type config struct {
+	AWS awsConfig
+
+	NewSQS func(*session.Session) interfaces.SQS
+	NewS3  func(*session.Session) interfaces.S3
+
+	MaxMessages int64
+	MaxPull     int
+}
+
+type Option func(*config)
 
 func WithMaxMessages(n int64) Option {
-	return func(x *Client) {
-		x.maxMessages = n
+	return func(x *config) {
+		x.MaxMessages = n
 	}
 }
 
 func WithMaxPull(n int) Option {
-	return func(x *Client) {
-		x.maxPull = n
+	return func(x *config) {
+		x.MaxPull = n
+	}
+}
+
+func WithAWSCredential(cred *credentials.Credentials) Option {
+	return func(x *config) {
+		x.AWS.Cred = cred
 	}
 }
 
 // WithSQSClientFactory sets a factory function to create an SQS client. This option is mainly for testing.
 func WithSQSClientFactory(f func(*session.Session) interfaces.SQS) Option {
-	return func(x *Client) {
-		x.newSQS = f
+	return func(x *config) {
+		x.NewSQS = f
 	}
 }
 
 // WithS3ClientFactory sets a factory function to create an S3 client. This option is mainly for testing.
 func WithS3ClientFactory(f func(*session.Session) interfaces.S3) Option {
-	return func(x *Client) {
-		x.newS3 = f
+	return func(x *config) {
+		x.NewS3 = f
 	}
 }
 
-func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey types.SecretString, sqsURL string, opts ...Option) hatchery.Source {
-	x := &Client{
-		awsRegion:          awsRegion,
-		awsAccessKeyId:     awsAccessKeyId,
-		awsSecretAccessKey: awsSecretAccessKey,
-		sqsURL:             sqsURL,
+func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqsURL string, opts ...Option) hatchery.Source {
+	x := &config{
+		AWS: awsConfig{
+			Region: awsRegion,
+			SQSURL: sqsURL,
+		},
 
-		newSQS: func(ssn *session.Session) interfaces.SQS {
+		NewSQS: func(ssn *session.Session) interfaces.SQS {
 			return sqs.New(ssn)
 		},
-		newS3: func(ssn *session.Session) interfaces.S3 {
+		NewS3: func(ssn *session.Session) interfaces.S3 {
 			return s3.New(ssn)
 		},
 
-		maxMessages: 10,
-		maxPull:     0,
+		MaxMessages: 10,
+		MaxPull:     0,
 	}
 
 	for _, opt := range opts {
@@ -99,33 +109,30 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey types.SecretString
 	}
 
 	return func(ctx context.Context, p *hatchery.Pipe) error {
+		logging.FromCtx(ctx).Info("Run Falcon Data Replicator source", "config", x)
+
 		// Create an AWS session
 		awsSession, err := session.NewSession(&aws.Config{
-			Region: aws.String(x.awsRegion),
-			Credentials: credentials.NewCredentials(&credentials.StaticProvider{
-				Value: credentials.Value{
-					AccessKeyID:     x.awsAccessKeyId,
-					SecretAccessKey: x.awsSecretAccessKey.UnsafeString(),
-				},
-			}),
+			Region:      aws.String(x.AWS.Region),
+			Credentials: x.AWS.Cred,
 		})
 		if err != nil {
 			return goerr.Wrap(err, "failed to create AWS session").With("client", x)
 		}
 
 		// Create AWS service clients
-		sqsClient := x.newSQS(awsSession)
-		s3Client := x.newS3(awsSession)
+		sqsClient := x.NewSQS(awsSession)
+		s3Client := x.NewS3(awsSession)
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
-			QueueUrl: aws.String(x.sqsURL),
+			QueueUrl: aws.String(x.AWS.SQSURL),
 		}
-		if x.maxMessages > 0 {
-			input.MaxNumberOfMessages = aws.Int64(x.maxMessages)
+		if x.MaxMessages > 0 {
+			input.MaxNumberOfMessages = aws.Int64(x.MaxMessages)
 		}
 
-		for i := 0; x.maxPull == 0 || i < x.maxPull; i++ {
+		for i := 0; x.MaxPull == 0 || i < x.MaxPull; i++ {
 			c := &fdrClients{sqs: sqsClient, s3: s3Client}
 			if err := copy(ctx, c, input, p); err != nil {
 				if err == errNoMoreMessage {

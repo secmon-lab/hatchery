@@ -5,7 +5,7 @@ import (
 
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/destination/gcs"
-	"github.com/secmon-as-code/hatchery/pkg/types"
+	"github.com/secmon-as-code/hatchery/pkg/types/secret"
 	"github.com/secmon-as-code/hatchery/source/slack"
 )
 
@@ -15,7 +15,7 @@ func main() {
 			// StreamID
 			ID: "slack-to-gcs",
 			// Source: Slack Audit API
-			Src: slack.New(types.NewSecretString(os.Getenv("SLACK_TOKEN"))),
+			Src: slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
 			Dst: gcs.New("mizutani-test"),
 		},

@@ -16,7 +16,7 @@ import (
 	"github.com/secmon-as-code/hatchery/pkg/metadata"
 	"github.com/secmon-as-code/hatchery/pkg/mock"
 	"github.com/secmon-as-code/hatchery/pkg/timestamp"
-	"github.com/secmon-as-code/hatchery/pkg/types"
+	"github.com/secmon-as-code/hatchery/pkg/types/secret"
 	"github.com/secmon-as-code/hatchery/source/slack"
 )
 
@@ -60,7 +60,7 @@ func TestSlackIntegration(t *testing.T) {
 	)
 
 	src := slack.New(
-		types.NewSecretString(loadOrSkip(t, "TEST_SLACK_ACCESS_TOKEN")),
+		secret.NewString(loadOrSkip(t, "TEST_SLACK_ACCESS_TOKEN")),
 		slack.WithMaxPages(maxPages),
 		slack.WithLimit(limit),
 		slack.WithDuration(duration),
@@ -134,7 +134,7 @@ func TestSlackCrawler(t *testing.T) {
 	}
 
 	src := slack.New(
-		types.NewSecretString("dummy"),
+		secret.NewString("dummy"),
 		slack.WithMaxPages(maxPages),
 		slack.WithLimit(limit),
 		slack.WithDuration(duration),
