@@ -1,5 +1,6 @@
 # hatchery
-A tool to gather data + logs from SaaS and save them to object storage
+
+A code-based audit log collector for SaaS services
 
 ![overview](https://github.com/m-mizutani/hatchery/assets/605953/0d065e1e-1b40-493b-a9c5-8215f2e1691e)
 
@@ -14,7 +15,20 @@ As a result, security administrators are required to gather logs from multiple s
 
 `hatchery` is a solution designed to address these challenges by collecting data and logs from SaaS services and storing them in object storage. This facilitates log retention and prepares the data for analysis by security administrators.
 
-For those interested in importing logs from Cloud Storage to BigQuery, please refer to [swarm](https://github.com/m-mizutani/swarm).
+## Documentation
+
+- About Hatchery
+  - [Overview](docs/README.md)
+  - [How to Use hatchery](docs/usage.md)
+  - [How to Develop Hatchery Extension](docs/extension.md)
+- Source
+  - [Slack](source/slack)
+  - [1Password](source/1password)
+  - [Falcon Data Replicator](source/falcon_data_replicator)
+  - [Twilio](source/twilio)
+- Destination
+  - [Google Cloud Storage](destination/gcs)
+  - [Amazon S3](destination/s3)
 
 ## Getting Started
 
@@ -24,6 +38,8 @@ For those interested in importing logs from Cloud Storage to BigQuery, please re
 - Scheduled binary execution service (e.g., cron, AWS Lambda, Google Cloud Run)
 
 ### Build your binary
+
+Write your own main.go. For example, the following code collects logs from Slack and stores them in Google Cloud Storage.
 
 ```go
 package main
@@ -38,15 +54,15 @@ import (
 )
 
 func main() {
-	streams := []hatchery.Stream{
-		{
+	streams := []*hatchery.Stream{
+		hatchery.NewStream(
 			// StreamID
-			ID: "slack-to-gcs",
+			"slack-to-gcs",
 			// Source: Slack Audit API
-			Src: slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
+			slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
-			Dst: gcs.New("mizutani-test"),
-		},
+			gcs.New("mizutani-test"),
+		),
 	}
 
 	// You can run CLI with args such as `go run main.go -s slack-to-gcs`
@@ -55,6 +71,23 @@ func main() {
 	}
 }
 ```
+
+Build your binary.
+
+```sh
+$ go build -o myhatchery main.go
+```
+
+### Run your binary
+
+Run your binary.
+
+```sh
+$ env SLACK_TOKEN=your-slack-token ./myhatchery -s slack-to-gcs
+```
+
+It will collect logs from Slack and store them in Google Cloud Storage.
+
 
 ## License
 
