@@ -1,0 +1,59 @@
+{
+  "entries": [
+    {
+      "id": "caa2f00f-047f-435c-a5d7-c17138b96803",
+      "date_create": 1710842413,
+      "action": "file_shared",
+      "actor": {
+        "type": "user",
+        "user": {
+          "id": "DIOFEOI",
+          "name": "some_channel",
+          "email": "botuser-XXXX@slack-bots.com",
+          "team": "XXXXXXXX"
+        }
+      },
+      "entity": {
+        "type": "file",
+        "file": {
+          "id": "LKDJFA",
+          "name": "some_file.pdf",
+          "filetype": "application/pdf",
+          "title": "some_file.pdf"
+        }
+      },
+      "context": {
+        "location": {
+          "type": "workspace",
+          "id": "LKJFEOIJES",
+          "name": "XYZ",
+          "domain": "xxx"
+        },
+        "ua": "Mozilla/5.0 (compatible; Google-Apps-Script; beanserver; +https://script.google.com; id: UAEmdDd-rNGVsG69y_uGpqMokGA6IbuJEV14)",
+        "ip_address": "192.158.1.38",
+        "session_id": null,
+        "app": {
+          "id": "FOIJEIFAFEF",
+          "name": "some_channel",
+          "scopes": ["search:read"],
+          "scopes_bot": [
+            "chat:write",
+            "groups:write",
+            "users:read",
+            "users:read.email",
+            "chat:write.customize"
+          ],
+          "creator": "IJFOIEOAF",
+          "team": "TDFOIJEFA"
+        }
+      },
+      "details": {
+        "url_private": "https://files.slack.com/files-pri/XXX.pdf",
+        "shared_with": { "channel_id": "XXXXXXX" }
+      }
+    }
+  ],
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}
