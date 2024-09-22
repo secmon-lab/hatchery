@@ -17,14 +17,12 @@ type Hatchery struct {
 type Option func(*Hatchery)
 
 // New creates a new Hatchery instance.
-func New(streams []Stream, opts ...Option) *Hatchery {
+func New(streams []*Stream, opts ...Option) *Hatchery {
 	h := &Hatchery{
 		logger: slog.Default(),
 	}
 
-	for _, stream := range streams {
-		h.streams = append(h.streams, &stream)
-	}
+	h.streams = streams
 
 	for _, opt := range opts {
 		opt(h)
@@ -37,7 +35,7 @@ func (h *Hatchery) Run(ctx context.Context, streamIDs []string) error {
 
 	for _, id := range streamIDs {
 		for _, stream := range h.streams {
-			if stream.ID == StreamID(id) {
+			if stream.id == StreamID(id) {
 				streams = append(streams, stream)
 			}
 		}
@@ -56,7 +54,7 @@ func (h *Hatchery) Run(ctx context.Context, streamIDs []string) error {
 			defer wg.Done()
 
 			if err := stream.Run(ctx); err != nil {
-				errCh <- goerr.Wrap(err, "pipeline failed").With("id", stream.ID)
+				errCh <- goerr.Wrap(err, "pipeline failed").With("id", stream.id)
 			}
 		}(s)
 	}

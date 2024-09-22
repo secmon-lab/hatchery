@@ -16,6 +16,46 @@ As a result, security administrators are required to gather logs from multiple s
 
 For those interested in importing logs from Cloud Storage to BigQuery, please refer to [swarm](https://github.com/m-mizutani/swarm).
 
+## Getting Started
+
+### Prerequisites
+
+- Go 1.22 or later
+- Scheduled binary execution service (e.g., cron, AWS Lambda, Google Cloud Run)
+
+### Build your binary
+
+```go
+package main
+
+import (
+	"os"
+
+	"github.com/secmon-as-code/hatchery"
+	"github.com/secmon-as-code/hatchery/destination/gcs"
+	"github.com/secmon-as-code/hatchery/pkg/types/secret"
+	"github.com/secmon-as-code/hatchery/source/slack"
+)
+
+func main() {
+	streams := []hatchery.Stream{
+		{
+			// StreamID
+			ID: "slack-to-gcs",
+			// Source: Slack Audit API
+			Src: slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
+			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
+			Dst: gcs.New("mizutani-test"),
+		},
+	}
+
+	// You can run CLI with args such as `go run main.go -s slack-to-gcs`
+	if err := hatchery.New(streams).CLI(os.Args); err != nil {
+		panic(err)
+	}
+}
+```
+
 ## License
 
 Apache License 2.0

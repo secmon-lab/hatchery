@@ -8,7 +8,7 @@ import (
 
 type StreamID string
 
-type Streams []Stream
+type Streams []*Stream
 
 func (s Streams) Validate() error {
 	for _, stream := range s {
@@ -21,26 +21,30 @@ func (s Streams) Validate() error {
 
 // Stream is a pipeline of data processing.
 type Stream struct {
-	ID  StreamID
-	Src Source
-	Dst Destination
+	id  StreamID
+	src Source
+	dst Destination
+}
+
+func NewStream(id StreamID, src Source, dst Destination) *Stream {
+	return &Stream{id: id, src: src, dst: dst}
 }
 
 // Run executes the stream, which invokes Source.Load and saves data via Destination.
 func (x *Stream) Run(ctx context.Context) error {
-	return x.Src(ctx, NewPipe(x.Dst))
+	return x.src(ctx, NewPipe(x.dst))
 }
 
 // Validate checks the stream is valid or not.
 func (x *Stream) Validate() error {
-	if x.ID == "" {
+	if x.id == "" {
 		return goerr.Wrap(ErrInvalidStream, "ID is not defined")
 	}
-	if x.Src == nil {
-		return goerr.Wrap(ErrInvalidStream, "source is not defined").With("id", x.ID)
+	if x.src == nil {
+		return goerr.Wrap(ErrInvalidStream, "source is not defined").With("id", x.id)
 	}
-	if x.Dst == nil {
-		return goerr.Wrap(ErrInvalidStream, "destination is not defined").With("id", x.ID)
+	if x.dst == nil {
+		return goerr.Wrap(ErrInvalidStream, "destination is not defined").With("id", x.id)
 	}
 	return nil
 }

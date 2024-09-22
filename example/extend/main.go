@@ -25,15 +25,15 @@ func main() {
 		return nil
 	}
 
-	streams := []hatchery.Stream{
-		{
+	streams := hatchery.Streams{
+		hatchery.NewStream(
 			// StreamID
-			ID: "my-own-service",
+			"my-own-service",
 			// Source: Some audit API
-			Src: getAuditLogs,
+			getAuditLogs,
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
-			Dst: gcs.New("mizutani-test"),
-		},
+			gcs.New("mizutani-test"),
+		),
 	}
 
 	// You can run CLI with args such as `go run main.go -s my-own-service`

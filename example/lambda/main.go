@@ -16,15 +16,15 @@ import (
 
 // HandleRequest receives SNS event and run hatchery
 func HandleRequest(ctx context.Context, snsEvent events.SNSEvent) error {
-	streams := []hatchery.Stream{
-		{
+	streams := []*hatchery.Stream{
+		hatchery.NewStream(
 			// StreamID
-			ID: "slack-to-s3",
+			"slack-to-s3",
 			// Source: Slack Audit API
-			Src: slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
+			slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
 			// Destination: S3, bucket name is "mizutani-test"
-			Dst: s3.New("ap-northeast-1", "mizutani-test"),
-		},
+			s3.New("ap-northeast-1", "mizutani-test"),
+		),
 	}
 
 	// In this example, SNS message has comma separated stream IDs, e.g., "slack-to-s3,some-other-stream"
