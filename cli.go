@@ -9,6 +9,8 @@ func (h *Hatchery) CLI(argv []string) error {
 
 	var (
 		streamIDs cli.StringSlice
+		tags      cli.StringSlice
+		forAll    bool
 	)
 
 	app := &cli.App{
@@ -17,13 +19,39 @@ func (h *Hatchery) CLI(argv []string) error {
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:        "stream-id",
-				Aliases:     []string{"s"},
+				Aliases:     []string{"i"},
+				EnvVars:     []string{"HATCHERY_STREAM_ID"},
 				Usage:       "Target stream ID",
 				Destination: &streamIDs,
 			},
+			&cli.StringSliceFlag{
+				Name:        "stream-tags",
+				Aliases:     []string{"t"},
+				EnvVars:     []string{"HATCHERY_STREAM_TAGS"},
+				Usage:       "Tags for the stream",
+				Destination: &tags,
+			},
+			&cli.BoolFlag{
+				Name:        "stream-all",
+				Aliases:     []string{"a"},
+				EnvVars:     []string{"HATCHERY_STREAM_ALL"},
+				Usage:       "Run all streams",
+				Destination: &forAll,
+			},
 		},
 		Action: func(c *cli.Context) error {
-			return h.Run(c.Context, streamIDs.Value())
+			selectors := []Selector{}
+			if forAll {
+				selectors = append(selectors, SelectAll())
+			}
+			if len(tags.Value()) > 0 {
+				selectors = append(selectors, SelectByTag(tags.Value()...))
+			}
+			if len(streamIDs.Value()) > 0 {
+				selectors = append(selectors, SelectByID(streamIDs.Value()...))
+			}
+
+			return h.Run(c.Context, selectors...)
 		},
 	}
 

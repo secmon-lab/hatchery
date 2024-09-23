@@ -27,12 +27,12 @@ func main() {
 
 	streams := hatchery.Streams{
 		hatchery.NewStream(
-			// StreamID
-			"my-own-service",
 			// Source: Some audit API
 			getAuditLogs,
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
 			gcs.New("mizutani-test"),
+			// With ID
+			hatchery.WithID("my-own-service"),
 		),
 	}
 

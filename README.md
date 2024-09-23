@@ -56,16 +56,17 @@ import (
 func main() {
 	streams := []*hatchery.Stream{
 		hatchery.NewStream(
-			// StreamID
-			"slack-to-gcs",
 			// Source: Slack Audit API
 			slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
 			gcs.New("mizutani-test"),
+
+			// Option: WithID sets the stream ID
+			hatchery.WithID("slack-to-gcs"),
 		),
 	}
 
-	// You can run CLI with args such as `go run main.go -s slack-to-gcs`
+	// You can run CLI with args such as `go run main.go -i slack-to-gcs`
 	if err := hatchery.New(streams).CLI(os.Args); err != nil {
 		panic(err)
 	}
