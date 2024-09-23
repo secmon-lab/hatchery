@@ -6,23 +6,22 @@ import (
 	"github.com/secmon-as-code/hatchery"
 	"github.com/secmon-as-code/hatchery/destination/gcs"
 	"github.com/secmon-as-code/hatchery/pkg/types/secret"
-	"github.com/secmon-as-code/hatchery/source/slack"
+	"github.com/secmon-as-code/hatchery/source/one_password"
 )
 
 func main() {
-	streams := []*hatchery.Stream{
+	streams := hatchery.Streams{
 		hatchery.NewStream(
-			// Source: Slack Audit API
-			slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
+			// Source: 1Password audit log
+			one_password.New(secret.NewString("1password")),
 			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
 			gcs.New("mizutani-test"),
-
-			// With ID
-			hatchery.WithID("slack-to-gcs"),
+			// Tags
+			hatchery.WithTags("hourly"),
 		),
 	}
 
-	// You can run CLI with args such as `go run main.go -s slack-to-gcs`
+	// You can run CLI with args such as `go run main.go -t hourly`
 	if err := hatchery.New(streams).CLI(os.Args); err != nil {
 		panic(err)
 	}
