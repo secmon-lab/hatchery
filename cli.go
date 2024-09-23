@@ -21,14 +21,14 @@ func (h *Hatchery) CLI(argv []string) error {
 				Name:        "stream-id",
 				Aliases:     []string{"i"},
 				EnvVars:     []string{"HATCHERY_STREAM_ID"},
-				Usage:       "Target stream ID",
+				Usage:       "Target stream ID, multiple IDs can be specified",
 				Destination: &streamIDs,
 			},
 			&cli.StringSliceFlag{
-				Name:        "stream-tags",
+				Name:        "stream-tag",
 				Aliases:     []string{"t"},
-				EnvVars:     []string{"HATCHERY_STREAM_TAGS"},
-				Usage:       "Tags for the stream",
+				EnvVars:     []string{"HATCHERY_STREAM_TAG"},
+				Usage:       "Tag for the stream, multiple tags can be specified",
 				Destination: &tags,
 			},
 			&cli.BoolFlag{
