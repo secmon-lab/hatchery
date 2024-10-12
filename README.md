@@ -15,6 +15,42 @@ As a result, security administrators are required to gather logs from multiple s
 
 `hatchery` is a solution designed to address these challenges by collecting data and logs from SaaS services and storing them in object storage. This facilitates log retention and prepares the data for analysis by security administrators.
 
+## How it works
+
+![design overview](./docs/images/design-overview.jpg)
+
+```go
+streams := []*hatchery.Stream{
+	hatchery.NewStream(
+		// Source: Slack Audit API
+		slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
+		// Destination: Google Cloud Storage
+		gcs.New("mizutani-test"),
+
+		// Identifiers
+		hatchery.WithID("slack-to-gcs"),
+		hatchery.WithTags("hourly"),
+	),
+
+	hatchery.NewStream(
+		// Source: 1Password
+		one_password.New(secret.NewString(os.Getenv("ONE_PASSWORD_TOKEN"))),
+		// Destination: Amazon S3
+		s3.New("ap-northeast1", "mizutani-test"),
+
+		// Identifiers
+		hatchery.WithID("1pw-to-s3"),
+		hatchery.WithTags("daily"),
+	),
+}
+```
+
+```go
+if err := hatchery.New(streams).CLI(os.Args); err != nil {
+	panic(err)
+}
+```
+
 ## Documentation
 
 - About Hatchery
@@ -22,13 +58,13 @@ As a result, security administrators are required to gather logs from multiple s
   - [How to Use hatchery](docs/usage.md)
   - [How to Develop Hatchery Extension](docs/extension.md)
 - Source
-  - [Slack](source/slack)
-  - [1Password](source/1password)
-  - [Falcon Data Replicator](source/falcon_data_replicator)
-  - [Twilio](source/twilio)
+  - [Slack](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/slack)
+  - [1Password](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/one_password)
+  - [Falcon Data Replicator](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/falcon_data_replicator)
+  - [Twilio](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/twilio)
 - Destination
-  - [Google Cloud Storage](destination/gcs)
-  - [Amazon S3](destination/s3)
+  - [Google Cloud Storage](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/gcs)
+  - [Amazon S3](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/s3)
 
 ## Getting Started
 
