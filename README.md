@@ -19,6 +19,13 @@ As a result, security administrators are required to gather logs from multiple s
 
 ![design overview](./docs/images/design-overview.jpg)
 
+`hatchery` is not a tool, but SDK. You can build your own binary with `hatchery` SDK and run it on your environment. You can define the source and destination of the data you want to collect, and `hatchery` will handle the data collection and storage for you.
+
+In `hatchery`, the data collection and storage pipeline is called a "stream". A stream consists of a source and a destination. The source is the data provider (e.g., Slack, 1Password, Falcon Data Replicator), and the destination is the data storage (e.g., Google Cloud Storage, Amazon S3). You can define multiple streams and run them in parallel.
+
+A stream has also an ID and tags. The ID is a unique identifier for the stream, and the tags are used to categorize the streams. You can use these identifiers to run specific streams or filter them by tags.
+
+Here is an example of how to define streams according to the above design image.
 ```go
 streams := []*hatchery.Stream{
 	hatchery.NewStream(
@@ -45,16 +52,23 @@ streams := []*hatchery.Stream{
 }
 ```
 
+You can run hatchery with the streams you defined. The following example shows how to run hatchery as Command Line Tool. It handles the command line arguments and runs the streams you specified.
+
 ```go
 if err := hatchery.New(streams).CLI(os.Args); err != nil {
 	panic(err)
 }
 ```
 
+```bash
+$ go build -o myhatchery main.go
+$ ./myhatchery -i slack-to-gcs # Run the stream with ID "slack-to-gcs"
+$ ./myhatchery -t hourly       # Run the streams with tag "hourly"
+```
+
 ## Documentation
 
 - About Hatchery
-  - [Overview](docs/README.md)
   - [How to Use hatchery](docs/usage.md)
   - [How to Develop Hatchery Extension](docs/extension.md)
 - Source
@@ -65,66 +79,6 @@ if err := hatchery.New(streams).CLI(os.Args); err != nil {
 - Destination
   - [Google Cloud Storage](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/gcs)
   - [Amazon S3](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/s3)
-
-## Getting Started
-
-### Prerequisites
-
-- Go 1.22 or later
-- Scheduled binary execution service (e.g., cron, AWS Lambda, Google Cloud Run)
-
-### Build your binary
-
-Write your own main.go. For example, the following code collects logs from Slack and stores them in Google Cloud Storage.
-
-```go
-package main
-
-import (
-	"os"
-
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/destination/gcs"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
-	"github.com/secmon-as-code/hatchery/source/slack"
-)
-
-func main() {
-	streams := []*hatchery.Stream{
-		hatchery.NewStream(
-			// Source: Slack Audit API
-			slack.New(secret.NewString(os.Getenv("SLACK_TOKEN"))),
-			// Destination: Google Cloud Storage, bucket name is "mizutani-test"
-			gcs.New("mizutani-test"),
-
-			// Option: WithID sets the stream ID
-			hatchery.WithID("slack-to-gcs"),
-		),
-	}
-
-	// You can run CLI with args such as `go run main.go -i slack-to-gcs`
-	if err := hatchery.New(streams).CLI(os.Args); err != nil {
-		panic(err)
-	}
-}
-```
-
-Build your binary.
-
-```sh
-$ go build -o myhatchery main.go
-```
-
-### Run your binary
-
-Run your binary.
-
-```sh
-$ env SLACK_TOKEN=your-slack-token ./myhatchery -s slack-to-gcs
-```
-
-It will collect logs from Slack and store them in Google Cloud Storage.
-
 
 ## License
 
