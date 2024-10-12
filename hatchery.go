@@ -46,7 +46,7 @@ func (h *Hatchery) Run(ctx context.Context, selectors ...Selector) error {
 	}
 
 	if len(targets) == 0 {
-		return goerr.Wrap(ErrStreamNotFound)
+		return goerr.Wrap(ErrNoStreamFound)
 	}
 
 	var wg sync.WaitGroup
