@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/destination/gcs"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/destination/gcs"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
 )
 
 func main() {

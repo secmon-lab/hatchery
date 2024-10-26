@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/m-mizutani/gt"
-	"github.com/secmon-as-code/hatchery/destination/s3"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery/destination/s3"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	aws_s3 "github.com/aws/aws-sdk-go-v2/service/s3"

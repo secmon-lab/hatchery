@@ -1,10 +1,10 @@
-module github.com/secmon-as-code/hatchery/example/lambda
+module github.com/secmon-lab/hatchery/example/lambda
 
 go 1.23.0
 
 require (
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/secmon-as-code/hatchery v0.0.0-20240821222948-f6d88b7f0081
+	github.com/secmon-lab/hatchery v0.0.0-20240821222948-f6d88b7f0081
 )
 
 require (
@@ -37,4 +37,4 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 )
 
-replace github.com/secmon-as-code/hatchery => ../..
+replace github.com/secmon-lab/hatchery => ../..

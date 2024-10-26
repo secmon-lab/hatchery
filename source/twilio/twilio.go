@@ -6,10 +6,10 @@ import (
 	"net/url"
 
 	"github.com/m-mizutani/goerr"
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/pkg/interfaces"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/pkg/interfaces"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
 )
 
 const (

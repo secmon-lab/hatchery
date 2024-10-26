@@ -9,8 +9,8 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/m-mizutani/goerr"
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
 	"google.golang.org/api/option"
 )
 

@@ -72,13 +72,13 @@ $ ./myhatchery -t hourly       # Run the streams with tag "hourly"
   - [How to Use hatchery](docs/usage.md)
   - [How to Develop Hatchery Extension](docs/extension.md)
 - Source
-  - [Slack](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/slack)
-  - [1Password](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/one_password)
-  - [Falcon Data Replicator](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/falcon_data_replicator)
-  - [Twilio](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/source/twilio)
+  - [Slack](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/source/slack)
+  - [1Password](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/source/one_password)
+  - [Falcon Data Replicator](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/source/falcon_data_replicator)
+  - [Twilio](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/source/twilio)
 - Destination
-  - [Google Cloud Storage](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/gcs)
-  - [Amazon S3](https://pkg.go.dev/github.com/secmon-as-code/hatchery@main/destination/s3)
+  - [Google Cloud Storage](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/destination/gcs)
+  - [Amazon S3](https://pkg.go.dev/github.com/secmon-lab/hatchery@main/destination/s3)
 
 ## License
 

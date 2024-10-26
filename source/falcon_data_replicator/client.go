@@ -11,12 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/m-mizutani/goerr"
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/pkg/interfaces"
-	"github.com/secmon-as-code/hatchery/pkg/logging"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
-	"github.com/secmon-as-code/hatchery/pkg/safe"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/pkg/interfaces"
+	"github.com/secmon-lab/hatchery/pkg/logging"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery/pkg/safe"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
 )
 
 type fdrMessage struct {

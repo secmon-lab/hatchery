@@ -1,10 +1,10 @@
-module github.com/secmon-as-code/hatchery/example/tag
+module github.com/secmon-lab/hatchery/example/tag
 
 go 1.23.0
 
-replace github.com/secmon-as-code/hatchery => ../..
+replace github.com/secmon-lab/hatchery => ../..
 
-require github.com/secmon-as-code/hatchery v0.0.0-20240821222948-f6d88b7f0081
+require github.com/secmon-lab/hatchery v0.0.0-20240821222948-f6d88b7f0081
 
 require (
 	cloud.google.com/go v0.115.1 // indirect

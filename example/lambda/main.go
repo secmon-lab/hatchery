@@ -8,10 +8,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/destination/s3"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
-	"github.com/secmon-as-code/hatchery/source/slack"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/destination/s3"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery/source/slack"
 )
 
 // HandleRequest receives SNS event and run hatchery

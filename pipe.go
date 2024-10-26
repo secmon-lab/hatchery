@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/m-mizutani/goerr"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
 )
 
 // Pipe is a struct that contains a destination. It is middle layer between source and destination and source function receives the Pipe object as the argument.

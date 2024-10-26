@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/m-mizutani/gt"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
 )
 
 func TestString(t *testing.T) {

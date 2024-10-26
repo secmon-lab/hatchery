@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"github.com/m-mizutani/goerr"
-	"github.com/secmon-as-code/hatchery/pkg/logging"
+	"github.com/secmon-lab/hatchery/pkg/logging"
 )
 
 func CloseReader(ctx context.Context, r io.ReadCloser) {

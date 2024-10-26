@@ -3,7 +3,7 @@ package metadata
 import (
 	"time"
 
-	"github.com/secmon-as-code/hatchery/pkg/types"
+	"github.com/secmon-lab/hatchery/pkg/types"
 )
 
 type MetaData struct {

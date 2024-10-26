@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/destination/gcs"
-	"github.com/secmon-as-code/hatchery/destination/s3"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
-	"github.com/secmon-as-code/hatchery/source/one_password"
-	"github.com/secmon-as-code/hatchery/source/slack"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/destination/gcs"
+	"github.com/secmon-lab/hatchery/destination/s3"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery/source/one_password"
+	"github.com/secmon-lab/hatchery/source/slack"
 )
 
 func main() {

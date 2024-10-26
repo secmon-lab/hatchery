@@ -1,4 +1,4 @@
-module github.com/secmon-as-code/hatchery
+module github.com/secmon-lab/hatchery
 
 go 1.23.0
 

@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/m-mizutani/gt"
-	"github.com/secmon-as-code/hatchery"
-	"github.com/secmon-as-code/hatchery/pkg/metadata"
-	"github.com/secmon-as-code/hatchery/pkg/mock"
-	"github.com/secmon-as-code/hatchery/pkg/timestamp"
-	"github.com/secmon-as-code/hatchery/pkg/types/secret"
-	"github.com/secmon-as-code/hatchery/source/slack"
+	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/pkg/metadata"
+	"github.com/secmon-lab/hatchery/pkg/mock"
+	"github.com/secmon-lab/hatchery/pkg/timestamp"
+	"github.com/secmon-lab/hatchery/pkg/types/secret"
+	"github.com/secmon-lab/hatchery/source/slack"
 )
 
 type writeCloseBuffer struct {
