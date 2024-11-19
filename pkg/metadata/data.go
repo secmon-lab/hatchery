@@ -7,9 +7,10 @@ import (
 )
 
 type MetaData struct {
-	timestamp *time.Time
-	seq       int
-	format    types.DataFormat
+	timestamp  *time.Time
+	seq        int
+	format     types.DataFormat
+	schemaHint string
 }
 
 func (m MetaData) Timestamp() time.Time {
@@ -21,6 +22,7 @@ func (m MetaData) Timestamp() time.Time {
 
 func (m MetaData) Seq() int                 { return m.seq }
 func (m MetaData) Format() types.DataFormat { return m.format }
+func (m MetaData) SchemaHint() string       { return m.schemaHint }
 
 func New(options ...Option) MetaData {
 	var md MetaData
@@ -49,5 +51,11 @@ func WithSeq(seq int) Option {
 func WithFormat(f types.DataFormat) Option {
 	return func(md *MetaData) {
 		md.format = f
+	}
+}
+
+func WithSchemaHint(hint string) Option {
+	return func(md *MetaData) {
+		md.schemaHint = hint
 	}
 }

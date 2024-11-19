@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -50,17 +51,10 @@ type client struct {
 	NewSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS
 	NewS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3
 
-	MaxMessages int32
-	MaxPull     int
+	MaxPull int
 }
 
 type Option func(*client)
-
-func WithMaxMessages(n int32) Option {
-	return func(x *client) {
-		x.MaxMessages = n
-	}
-}
 
 func WithMaxPull(n int) Option {
 	return func(x *client) {
@@ -89,8 +83,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 			return s3.NewFromConfig(cfg, optFns...)
 		},
 
-		MaxMessages: 10,
-		MaxPull:     0,
+		MaxPull: 0,
 	}
 
 	for _, opt := range opts {
@@ -107,7 +100,9 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		)
 	}
 	return func(ctx context.Context, p *hatchery.Pipe) error {
-		logging.FromCtx(ctx).Info("Run Falcon Data Replicator source", "config", x)
+		logger := logging.FromCtx(ctx).With("source", "falcon_data_replicator")
+		logger.Info("New source (Falcon Data Replicator)", "config", x)
+		ctx = logging.InjectCtx(ctx, logger)
 
 		cfg, err := config.LoadDefaultConfig(ctx, awsOpts...)
 		if err != nil {
@@ -121,9 +116,6 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
 			QueueUrl: aws.String(x.AWS.SqsURL),
-		}
-		if x.MaxMessages > 0 {
-			input.MaxNumberOfMessages = x.MaxMessages
 		}
 
 		for i := 0; x.MaxPull == 0 || i < x.MaxPull; i++ {
@@ -150,6 +142,7 @@ var (
 )
 
 func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInput, p *hatchery.Pipe) error {
+	logger := logging.FromCtx(ctx)
 	result, err := clients.sqs.ReceiveMessage(ctx, input)
 	if err != nil {
 		return goerr.Wrap(err, "failed to receive messages from SQS").With("input", input)
@@ -161,7 +154,7 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 	// Iterate over received messages
 	for _, message := range result.Messages {
 		if message.Body == nil {
-			logging.FromCtx(ctx).Warn("Received message with no body", "message", message)
+			logger.Warn("Received message with no body", "message", message)
 			continue
 		}
 
@@ -171,10 +164,11 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 			return goerr.Wrap(err, "failed to unmarshal message").With("message", *message.Body)
 		}
 
-		logging.FromCtx(ctx).Info("Received message", "msg", msg, "body", *message.Body)
+		logger.Debug("Received SQS message", "msg", msg)
 
 		for _, file := range msg.Files {
 			// Download the object from S3
+			logger.Info("downloading object from S3", "bucket", msg.Bucket, "path", file.Path)
 			s3Input := &s3.GetObjectInput{
 				Bucket: aws.String(msg.Bucket),
 				Key:    aws.String(file.Path),
@@ -185,8 +179,25 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 			}
 			defer safe.CloseReader(ctx, s3Obj.Body)
 
+			// Parse key of the object
+			parts := strings.Split(file.Path, "/")
+			var schemaHint string
+			if len(parts) > 1 {
+				switch parts[1] {
+				case "data":
+					schemaHint = "data"
+				case "fdrv2":
+					schemaHint = "fdrv2_" + parts[2]
+				}
+			}
+			if schemaHint == "" {
+				logger.Warn("failed to parse schema hint", "path", file.Path)
+				schemaHint = "unknown"
+			}
+
 			md := metadata.New(
 				metadata.WithTimestamp(time.Unix(msg.Timestamp/1000, 0)),
+				metadata.WithSchemaHint(schemaHint),
 			)
 
 			r, err := gzip.NewReader(s3Obj.Body)
