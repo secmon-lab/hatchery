@@ -37,9 +37,9 @@ type file struct {
 }
 
 type awsConfig struct {
-	Region string
-	Cred   aws.CredentialsProvider
-	SQSURL string
+	region string
+	cred   aws.CredentialsProvider
+	sqsURL string
 }
 
 type client struct {
@@ -68,16 +68,16 @@ func WithMaxPull(n int) Option {
 
 func WithAWSCredential(cred aws.CredentialsProvider) Option {
 	return func(x *client) {
-		x.AWS.Cred = cred
+		x.AWS.cred = cred
 	}
 }
 
 func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqsURL string, opts ...Option) hatchery.Source {
 	x := &client{
 		AWS: awsConfig{
-			Region: awsRegion,
-			SQSURL: sqsURL,
-			Cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
+			region: awsRegion,
+			sqsURL: sqsURL,
+			cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
 		},
 
 		NewSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
@@ -96,12 +96,12 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 	}
 
 	awsOpts := []func(*config.LoadOptions) error{
-		config.WithRegion(x.AWS.Region),
+		config.WithRegion(x.AWS.region),
 	}
 
-	if x.AWS.Cred != nil {
+	if x.AWS.cred != nil {
 		awsOpts = append(awsOpts,
-			config.WithCredentialsProvider(x.AWS.Cred),
+			config.WithCredentialsProvider(x.AWS.cred),
 		)
 	}
 	return func(ctx context.Context, p *hatchery.Pipe) error {
@@ -118,7 +118,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
-			QueueUrl: aws.String(x.AWS.SQSURL),
+			QueueUrl: aws.String(x.AWS.sqsURL),
 		}
 		if x.MaxMessages > 0 {
 			input.MaxNumberOfMessages = x.MaxMessages
