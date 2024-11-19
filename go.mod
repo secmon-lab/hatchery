@@ -10,7 +10,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.18
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.61.2
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.34.9
+	github.com/fatih/color v1.18.0
 	github.com/google/uuid v1.6.0
+	github.com/m-mizutani/clog v0.0.7
 	github.com/m-mizutani/goerr v0.1.14
 	github.com/m-mizutani/gt v0.0.11
 	github.com/urfave/cli/v2 v2.27.4
@@ -47,6 +49,9 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
+	github.com/k0kubun/pp/v3 v3.2.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opencensus.io v0.24.0 // indirect

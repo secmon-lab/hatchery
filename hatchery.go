@@ -6,12 +6,14 @@ import (
 	"sync"
 
 	"github.com/m-mizutani/goerr"
+	"github.com/secmon-lab/hatchery/pkg/logging"
 )
 
 // Hatchery is a main manager of this tool.
 type Hatchery struct {
-	streams Streams
-	logger  *slog.Logger
+	streams         Streams
+	logger          *slog.Logger
+	loggerIsDefault bool
 }
 
 type Option func(*Hatchery)
@@ -19,7 +21,8 @@ type Option func(*Hatchery)
 // New creates a new Hatchery instance.
 func New(streams []*Stream, opts ...Option) *Hatchery {
 	h := &Hatchery{
-		logger: slog.Default(),
+		logger:          logging.Default(),
+		loggerIsDefault: true,
 	}
 
 	h.streams = streams
