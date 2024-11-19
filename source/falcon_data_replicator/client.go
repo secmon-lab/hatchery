@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/m-mizutani/goerr"
@@ -76,6 +77,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		AWS: awsConfig{
 			Region: awsRegion,
 			SQSURL: sqsURL,
+			Cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
 		},
 
 		NewSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
