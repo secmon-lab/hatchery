@@ -36,10 +36,11 @@ type file struct {
 	Size     int64  `json:"size"`
 }
 
+// Export the config struct for logging
 type awsConfig struct {
-	region string
+	Region string
 	cred   aws.CredentialsProvider
-	sqsURL string
+	SqsURL string
 }
 
 type client struct {
@@ -75,8 +76,8 @@ func WithAWSCredential(cred aws.CredentialsProvider) Option {
 func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqsURL string, opts ...Option) hatchery.Source {
 	x := &client{
 		AWS: awsConfig{
-			region: awsRegion,
-			sqsURL: sqsURL,
+			Region: awsRegion,
+			SqsURL: sqsURL,
 			cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
 		},
 
@@ -96,7 +97,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 	}
 
 	awsOpts := []func(*config.LoadOptions) error{
-		config.WithRegion(x.AWS.region),
+		config.WithRegion(x.AWS.Region),
 	}
 
 	if x.AWS.cred != nil {
@@ -118,7 +119,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
-			QueueUrl: aws.String(x.AWS.sqsURL),
+			QueueUrl: aws.String(x.AWS.SqsURL),
 		}
 		if x.MaxMessages > 0 {
 			input.MaxNumberOfMessages = x.MaxMessages

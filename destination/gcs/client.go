@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-lab/hatchery"
+	"github.com/secmon-lab/hatchery/pkg/logging"
 	"github.com/secmon-lab/hatchery/pkg/metadata"
 	"google.golang.org/api/option"
 )
@@ -97,6 +98,9 @@ func New(bucket string, options ...Option) hatchery.Destination {
 				gzipWriter: gzip.NewWriter(objWriter),
 			}
 		}
+
+		logging.FromCtx(ctx).Info("New destination (Google Cloud Storage)", "bucket", c.bucket, "object", objName, "metadata", md)
+
 		return w, nil
 	}
 }
