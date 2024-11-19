@@ -29,17 +29,22 @@ func (c *Client) Prefix() string { return c.prefix }
 func (c *Client) Gzip() bool     { return c.gzip }
 
 type ObjNameArgs struct {
-	Prefix    string
-	Timestamp time.Time
-	Seq       int
-	Ext       string
+	Prefix     string
+	Timestamp  time.Time
+	Seq        int
+	Ext        string
+	SchemaHint string
 }
 
 type ObjNameFunc func(args ObjNameArgs) string
 
 func DefaultObjectName(args ObjNameArgs) string {
 	timeKey := args.Timestamp.Format("2006/01/02/15/20060102T150405")
-	return fmt.Sprintf("%s%s_%04d.%s", args.Prefix, timeKey, args.Seq, args.Ext)
+	schema := args.SchemaHint
+	if schema != "" {
+		schema += "/"
+	}
+	return fmt.Sprintf("%s%s%s_%04d.%s", args.Prefix, schema, timeKey, args.Seq, args.Ext)
 }
 
 type gzipWriter struct {
@@ -77,10 +82,11 @@ func New(bucket string, options ...Option) hatchery.Destination {
 		}
 
 		args := ObjNameArgs{
-			Prefix:    c.prefix,
-			Timestamp: md.Timestamp(),
-			Seq:       md.Seq(),
-			Ext:       md.Format().Ext(),
+			Prefix:     c.prefix,
+			Timestamp:  md.Timestamp(),
+			Seq:        md.Seq(),
+			Ext:        md.Format().Ext(),
+			SchemaHint: md.SchemaHint(),
 		}
 		if c.gzip {
 			args.Ext += ".gz"

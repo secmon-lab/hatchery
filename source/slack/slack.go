@@ -55,7 +55,9 @@ func New(accessToken secret.String, options ...Option) hatchery.Source {
 		var nextCursor string
 		now := timestamp.FromCtx(ctx)
 
-		logging.FromCtx(ctx).Info("Run slack source", "config", c)
+		logger := logging.FromCtx(ctx).With("source", "slack")
+		logger.Info("New source (Slack)", "config", c)
+		ctx = logging.InjectCtx(ctx, logger)
 
 		for seq := 0; c.MaxPages == 0 || seq < c.MaxPages; seq++ {
 			cursor, err := c.crawl(ctx, now, seq, nextCursor, p)

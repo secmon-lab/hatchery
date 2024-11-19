@@ -84,7 +84,9 @@ func New(apiToken secret.String, opts ...Option) hatchery.Source {
 		var nextCursor string
 		now := timestamp.FromCtx(ctx)
 
-		logging.FromCtx(ctx).Info("Run 1Password source", "config", x)
+		logger := logging.FromCtx(ctx).With("source", "one_password")
+		logger.Info("New source (1Password)", "config", x)
+		ctx = logging.InjectCtx(ctx, logger)
 
 		for seq := 0; x.MaxPages == 0 || seq < x.MaxPages; seq++ {
 			cursor, err := x.crawl(ctx, p, now, seq, nextCursor)

@@ -8,6 +8,7 @@ import (
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-lab/hatchery"
 	"github.com/secmon-lab/hatchery/pkg/interfaces"
+	"github.com/secmon-lab/hatchery/pkg/logging"
 	"github.com/secmon-lab/hatchery/pkg/metadata"
 	"github.com/secmon-lab/hatchery/pkg/types/secret"
 )
@@ -45,6 +46,10 @@ func New(sid string, token secret.String, options ...Option) hatchery.Source {
 
 	// To be updated
 	return func(ctx context.Context, p *hatchery.Pipe) error {
+		logger := logging.FromCtx(ctx).With("source", "twilio")
+		logger.Info("New source (Twilio)", "config", c)
+		ctx = logging.InjectCtx(ctx, logger)
+
 		reqURL, err := url.Parse(c.baseURL)
 		if err != nil {
 			return goerr.Wrap(err, "failed to parse URL").With("url", c.baseURL)
