@@ -1,7 +1,10 @@
 package hatchery
 
 import (
+	"log/slog"
+
 	"github.com/m-mizutani/goerr"
+	"github.com/secmon-lab/hatchery/pkg/logging"
 	"github.com/urfave/cli/v2"
 )
 
@@ -11,6 +14,10 @@ func (h *Hatchery) CLI(argv []string) error {
 		streamIDs cli.StringSlice
 		tags      cli.StringSlice
 		forAll    bool
+
+		logFormat string
+		logLevel  string
+		logOut    string
 	)
 
 	app := &cli.App{
@@ -38,6 +45,31 @@ func (h *Hatchery) CLI(argv []string) error {
 				Usage:       "Run all streams",
 				Destination: &forAll,
 			},
+
+			&cli.StringFlag{
+				Name:        "log-format",
+				Aliases:     []string{"f"},
+				EnvVars:     []string{"HATCHERY_LOG_FORMAT"},
+				Usage:       "Log format (json, text)",
+				Value:       "json",
+				Destination: &logFormat,
+			},
+			&cli.StringFlag{
+				Name:        "log-level",
+				Aliases:     []string{"l"},
+				EnvVars:     []string{"HATCHERY_LOG_LEVEL"},
+				Usage:       "Log level (debug, info, warn, error)",
+				Value:       "info",
+				Destination: &logLevel,
+			},
+			&cli.StringFlag{
+				Name:        "log-out",
+				Aliases:     []string{"o"},
+				EnvVars:     []string{"HATCHERY_LOG_OUT"},
+				Usage:       "Log output (stdout or stderr)",
+				Value:       "stdout",
+				Destination: &logOut,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			selectors := []Selector{}
@@ -51,7 +83,22 @@ func (h *Hatchery) CLI(argv []string) error {
 				selectors = append(selectors, SelectByID(streamIDs.Value()...))
 			}
 
-			return h.Run(c.Context, selectors...)
+			var logger *slog.Logger
+			if h.loggerIsDefault {
+				newLogger, err := buildLogger(logLevel, logFormat, logOut)
+				if err != nil {
+					return err
+				}
+				logger = newLogger
+				logger.Info("Logger is initialized", "level", logLevel, "format", logFormat, "output", logOut)
+			} else {
+				logger = h.logger
+				logger.Info("Logger is used from option")
+			}
+
+			ctx := logging.InjectCtx(c.Context, logger)
+
+			return h.Run(ctx, selectors...)
 		},
 	}
 

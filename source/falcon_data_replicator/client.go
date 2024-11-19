@@ -1,6 +1,7 @@
 package falcon_data_replicator
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/m-mizutani/goerr"
@@ -35,10 +37,11 @@ type file struct {
 	Size     int64  `json:"size"`
 }
 
+// Export the config struct for logging
 type awsConfig struct {
 	Region string
-	Cred   aws.CredentialsProvider
-	SQSURL string
+	cred   aws.CredentialsProvider
+	SqsURL string
 }
 
 type client struct {
@@ -67,7 +70,7 @@ func WithMaxPull(n int) Option {
 
 func WithAWSCredential(cred aws.CredentialsProvider) Option {
 	return func(x *client) {
-		x.AWS.Cred = cred
+		x.AWS.cred = cred
 	}
 }
 
@@ -75,7 +78,8 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 	x := &client{
 		AWS: awsConfig{
 			Region: awsRegion,
-			SQSURL: sqsURL,
+			SqsURL: sqsURL,
+			cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
 		},
 
 		NewSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
@@ -97,9 +101,9 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		config.WithRegion(x.AWS.Region),
 	}
 
-	if x.AWS.Cred != nil {
+	if x.AWS.cred != nil {
 		awsOpts = append(awsOpts,
-			config.WithCredentialsProvider(x.AWS.Cred),
+			config.WithCredentialsProvider(x.AWS.cred),
 		)
 	}
 	return func(ctx context.Context, p *hatchery.Pipe) error {
@@ -116,7 +120,7 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{
-			QueueUrl: aws.String(x.AWS.SQSURL),
+			QueueUrl: aws.String(x.AWS.SqsURL),
 		}
 		if x.MaxMessages > 0 {
 			input.MaxNumberOfMessages = x.MaxMessages
@@ -156,11 +160,18 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 
 	// Iterate over received messages
 	for _, message := range result.Messages {
+		if message.Body == nil {
+			logging.FromCtx(ctx).Warn("Received message with no body", "message", message)
+			continue
+		}
+
 		// Get the S3 object key from the message
 		var msg fdrMessage
 		if err := json.Unmarshal([]byte(*message.Body), &msg); err != nil {
 			return goerr.Wrap(err, "failed to unmarshal message").With("message", *message.Body)
 		}
+
+		logging.FromCtx(ctx).Info("Received message", "msg", msg, "body", *message.Body)
 
 		for _, file := range msg.Files {
 			// Download the object from S3
@@ -175,9 +186,15 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 			defer safe.CloseReader(ctx, s3Obj.Body)
 
 			md := metadata.New(
-				metadata.WithTimestamp(time.Unix(msg.Timestamp, 0)),
+				metadata.WithTimestamp(time.Unix(msg.Timestamp/1000, 0)),
 			)
-			if err := p.Spout(ctx, s3Obj.Body, md); err != nil {
+
+			r, err := gzip.NewReader(s3Obj.Body)
+			if err != nil {
+				return goerr.Wrap(err, "failed to create gzip reader").With("msg", msg)
+			}
+
+			if err := p.Spout(ctx, r, md); err != nil {
 				return goerr.Wrap(err, "failed to write object to destination").With("msg", msg)
 			}
 		}
