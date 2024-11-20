@@ -58,9 +58,12 @@ func (w *gzipWriter) Write(p []byte) (n int, err error) {
 
 func (w *gzipWriter) Close() error {
 	if err := w.gzipWriter.Close(); err != nil {
-		return err
+		return goerr.Wrap(err, "failed to close gzip writer")
 	}
-	return w.writer.Close()
+	if err := w.writer.Close(); err != nil {
+		return goerr.Wrap(err, "failed to close writer")
+	}
+	return nil
 }
 
 // New creates a new Client destination.
