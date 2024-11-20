@@ -201,7 +201,7 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 			md := metadata.New(
 				metadata.WithTimestamp(time.Unix(msg.Timestamp/1000, 0)),
 				metadata.WithSchemaHint(schemaHint),
-				metadata.WithSlug(hex.EncodeToString(pathHash[:])),
+				metadata.WithSlug(hex.EncodeToString(pathHash[:])[0:8]),
 			)
 
 			r, err := gzip.NewReader(s3Obj.Body)
