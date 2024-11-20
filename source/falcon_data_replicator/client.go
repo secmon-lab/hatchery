@@ -50,8 +50,8 @@ type awsConfig struct {
 type client struct {
 	AWS awsConfig
 
-	NewSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS `json:"-"`
-	NewS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3   `json:"-"`
+	newSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS
+	newS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3
 
 	MaxPull int
 }
@@ -78,10 +78,10 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 			cred:   credentials.NewStaticCredentialsProvider(awsAccessKeyId, awsSecretAccessKey.Unsafe(), ""),
 		},
 
-		NewSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
+		newSQS: func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS {
 			return sqs.NewFromConfig(cfg, optFns...)
 		},
-		NewS3: func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3 {
+		newS3: func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3 {
 			return s3.NewFromConfig(cfg, optFns...)
 		},
 
@@ -112,8 +112,8 @@ func New(awsRegion, awsAccessKeyId string, awsSecretAccessKey secret.String, sqs
 		}
 
 		// Create AWS service clients
-		s3Client := x.NewS3(cfg)
-		sqsClient := x.NewSQS(cfg)
+		s3Client := x.newS3(cfg)
+		sqsClient := x.newSQS(cfg)
 
 		// Receive messages from SQS queue
 		input := &sqs.ReceiveMessageInput{

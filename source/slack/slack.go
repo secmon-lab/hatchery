@@ -35,13 +35,13 @@ type config struct {
 	Duration time.Duration
 
 	// httpClient is a HTTP client to send requests to Slack API.
-	HTTPClient interfaces.HTTPClient
+	httpClient interfaces.HTTPClient
 }
 
 func New(accessToken secret.String, options ...Option) hatchery.Source {
 	c := &config{
 		AccessToken: accessToken,
-		HTTPClient:  http.DefaultClient,
+		httpClient:  http.DefaultClient,
 		Duration:    10 * time.Minute,
 		Limit:       100,
 		MaxPages:    0,
@@ -100,7 +100,7 @@ func WithDuration(duration time.Duration) Option {
 // WithHTTPClient sets a HTTP client to send requests to Slack API.
 func WithHTTPClient(httpClient interfaces.HTTPClient) Option {
 	return func(c *config) {
-		c.HTTPClient = httpClient
+		c.httpClient = httpClient
 	}
 }
 
@@ -136,7 +136,7 @@ func (x *config) crawl(ctx context.Context, end time.Time, seq int, cursor strin
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+x.AccessToken.Unsafe())
 
-	httpResp, err := x.HTTPClient.Do(httpReq)
+	httpResp, err := x.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, goerr.Wrap(err, "failed to send HTTP request")
 	}
