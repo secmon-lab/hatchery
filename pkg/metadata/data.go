@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/secmon-lab/hatchery/pkg/types"
@@ -12,6 +13,16 @@ type MetaData struct {
 	format     types.DataFormat
 	schemaHint string
 	slug       string
+}
+
+func (m MetaData) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Time("timestamp", m.Timestamp()),
+		slog.Int("seq", m.Seq()),
+		slog.Any("format", m.Format()),
+		slog.String("schemaHint", m.SchemaHint()),
+		slog.String("slug", m.Slug()),
+	)
 }
 
 func (m MetaData) Timestamp() time.Time {
