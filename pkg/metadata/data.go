@@ -11,6 +11,7 @@ type MetaData struct {
 	seq        int
 	format     types.DataFormat
 	schemaHint string
+	slug       string
 }
 
 func (m MetaData) Timestamp() time.Time {
@@ -23,6 +24,7 @@ func (m MetaData) Timestamp() time.Time {
 func (m MetaData) Seq() int                 { return m.seq }
 func (m MetaData) Format() types.DataFormat { return m.format }
 func (m MetaData) SchemaHint() string       { return m.schemaHint }
+func (m MetaData) Slug() string             { return m.slug }
 
 func New(options ...Option) MetaData {
 	var md MetaData
@@ -57,5 +59,11 @@ func WithFormat(f types.DataFormat) Option {
 func WithSchemaHint(hint string) Option {
 	return func(md *MetaData) {
 		md.schemaHint = hint
+	}
+}
+
+func WithSlug(slug string) Option {
+	return func(md *MetaData) {
+		md.slug = slug
 	}
 }

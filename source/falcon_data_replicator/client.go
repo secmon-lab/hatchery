@@ -3,6 +3,8 @@ package falcon_data_replicator
 import (
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -195,9 +197,11 @@ func copy(ctx context.Context, clients *fdrClients, input *sqs.ReceiveMessageInp
 				schemaHint = "unknown"
 			}
 
+			pathHash := sha256.Sum256([]byte(file.Path))
 			md := metadata.New(
 				metadata.WithTimestamp(time.Unix(msg.Timestamp/1000, 0)),
 				metadata.WithSchemaHint(schemaHint),
+				metadata.WithSlug(hex.EncodeToString(pathHash[:])),
 			)
 
 			r, err := gzip.NewReader(s3Obj.Body)

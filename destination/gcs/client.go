@@ -34,6 +34,7 @@ type ObjNameArgs struct {
 	Seq        int
 	Ext        string
 	SchemaHint string
+	Slug       string
 }
 
 type ObjNameFunc func(args ObjNameArgs) string
@@ -44,7 +45,12 @@ func DefaultObjectName(args ObjNameArgs) string {
 	if schema != "" {
 		schema += "/"
 	}
-	return fmt.Sprintf("%s%s%s_%04d.%s", args.Prefix, schema, timeKey, args.Seq, args.Ext)
+
+	var slug string
+	if args.Slug != "" {
+		slug = "_" + args.Slug
+	}
+	return fmt.Sprintf("%s%s%s%s_%04d.%s", args.Prefix, schema, timeKey, slug, args.Seq, args.Ext)
 }
 
 type gzipWriter struct {
@@ -90,6 +96,7 @@ func New(bucket string, options ...Option) hatchery.Destination {
 			Seq:        md.Seq(),
 			Ext:        md.Format().Ext(),
 			SchemaHint: md.SchemaHint(),
+			Slug:       md.Slug(),
 		}
 		if c.gzip {
 			args.Ext += ".gz"
