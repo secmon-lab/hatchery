@@ -48,8 +48,8 @@ type awsConfig struct {
 type client struct {
 	AWS awsConfig
 
-	NewSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS
-	NewS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3
+	NewSQS func(cfg aws.Config, optFns ...func(*sqs.Options)) interfaces.SQS `json:"-"`
+	NewS3  func(cfg aws.Config, optFns ...func(*s3.Options)) interfaces.S3   `json:"-"`
 
 	MaxPull int
 }
