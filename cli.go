@@ -2,9 +2,11 @@ package hatchery
 
 import (
 	"log/slog"
+	"time"
 
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-lab/hatchery/pkg/logging"
+	"github.com/secmon-lab/hatchery/pkg/timestamp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -14,6 +16,7 @@ func (h *Hatchery) CLI(argv []string) error {
 		streamIDs cli.StringSlice
 		tags      cli.StringSlice
 		forAll    bool
+		baseTime  cli.Timestamp
 
 		logFormat string
 		logLevel  string
@@ -44,6 +47,15 @@ func (h *Hatchery) CLI(argv []string) error {
 				EnvVars:     []string{"HATCHERY_STREAM_ALL"},
 				Usage:       "Run all streams",
 				Destination: &forAll,
+			},
+
+			&cli.TimestampFlag{
+				Name:        "base-time",
+				Aliases:     []string{"b"},
+				EnvVars:     []string{"HATCHERY_BASE_TIME"},
+				Usage:       "Base time to load data. Default is current time",
+				Destination: &baseTime,
+				Layout:      time.RFC3339,
 			},
 
 			&cli.StringFlag{
@@ -97,6 +109,10 @@ func (h *Hatchery) CLI(argv []string) error {
 			}
 
 			ctx := logging.InjectCtx(c.Context, logger)
+
+			if t := baseTime.Value(); t != nil && !t.IsZero() {
+				ctx = timestamp.InjectCtx(ctx, *t)
+			}
 
 			return h.Run(ctx, selectors...)
 		},

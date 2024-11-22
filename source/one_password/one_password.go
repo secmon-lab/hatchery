@@ -85,7 +85,7 @@ func New(apiToken secret.String, opts ...Option) hatchery.Source {
 		now := timestamp.FromCtx(ctx)
 
 		logger := logging.FromCtx(ctx).With("source", "one_password")
-		logger.Info("New source (1Password)", "config", x)
+		logger.Info("New source (1Password)", "config", x, "base_time", now)
 		ctx = logging.InjectCtx(ctx, logger)
 
 		for seq := 0; x.MaxPages == 0 || seq < x.MaxPages; seq++ {
