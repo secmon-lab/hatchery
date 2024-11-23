@@ -58,9 +58,14 @@ func New(accessToken secret.String, options ...Option) hatchery.Source {
 		logger := logging.FromCtx(ctx).With("source", "slack")
 		logger.Info("New source (Slack)", "config", c, "base_time", now)
 		ctx = logging.InjectCtx(ctx, logger)
+		slug, err := metadata.RandomSlug()
+
+		if err != nil {
+			return goerr.Wrap(err, "failed to generate random slug")
+		}
 
 		for seq := 0; c.MaxPages == 0 || seq < c.MaxPages; seq++ {
-			cursor, err := c.crawl(ctx, now, seq, nextCursor, p)
+			cursor, err := c.crawl(ctx, now, seq, nextCursor, slug, p)
 			if err != nil {
 				return goerr.Wrap(err, "failed to crawl slack logs").With("seq", seq).With("cursor", nextCursor).With("config", *c)
 			}
@@ -111,7 +116,7 @@ const (
 	baseURL = "https://api.slack.com/audit/v1/logs"
 )
 
-func (x *config) crawl(ctx context.Context, end time.Time, seq int, cursor string, p *hatchery.Pipe) (*string, error) {
+func (x *config) crawl(ctx context.Context, end time.Time, seq int, cursor, slug string, p *hatchery.Pipe) (*string, error) {
 	startTime := end.Add(-x.Duration)
 	qv := url.Values{}
 	if x.Limit > 0 {
@@ -170,6 +175,7 @@ func (x *config) crawl(ctx context.Context, end time.Time, seq int, cursor strin
 		metadata.WithTimestamp(end),
 		metadata.WithSeq(seq),
 		metadata.WithFormat(types.FmtJSON),
+		metadata.WithSlug(slug),
 	)
 	if err := p.Spout(ctx, bytes.NewReader(body), md); err != nil {
 		return nil, goerr.Wrap(err, "failed to write response to destination")

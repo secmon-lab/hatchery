@@ -1,11 +1,11 @@
 package metadata
 
 import (
+	"crypto/rand"
 	"log/slog"
-	"strings"
+	"math/big"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/secmon-lab/hatchery/pkg/types"
 )
 
@@ -17,12 +17,20 @@ type MetaData struct {
 	slug       string
 }
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
 func RandomSlug() (string, error) {
-	id, err := uuid.NewV7()
-	if err != nil {
-		return "", err
+	const n = 8
+	result := make([]byte, n)
+	for i := range result {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = letterBytes[num.Int64()]
 	}
-	return strings.Split(id.String(), "-")[0], nil
+	return string(result), nil
+
 }
 
 func (m MetaData) LogValue() slog.Value {
