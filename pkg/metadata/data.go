@@ -2,8 +2,10 @@ package metadata
 
 import (
 	"log/slog"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/secmon-lab/hatchery/pkg/types"
 )
 
@@ -13,6 +15,14 @@ type MetaData struct {
 	format     types.DataFormat
 	schemaHint string
 	slug       string
+}
+
+func RandomSlug() (string, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return "", err
+	}
+	return strings.Split(id.String(), "-")[0], nil
 }
 
 func (m MetaData) LogValue() slog.Value {

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	"time"
 
 	"github.com/m-mizutani/goerr"
@@ -15,6 +14,7 @@ type Range struct {
 }
 
 func (x *Range) Flags() []cli.Flag {
+	now := time.Now()
 	return []cli.Flag{
 		&cli.TimestampFlag{
 			Name:        "start-time",
@@ -23,6 +23,7 @@ func (x *Range) Flags() []cli.Flag {
 			Sources:     cli.EnvVars("HATCHERY_START_TIME"),
 			Usage:       "Start time to load data",
 			Destination: &x.start,
+			Value:       now,
 			Config: cli.TimestampConfig{
 				Layouts: []string{time.RFC3339, time.RFC3339Nano},
 			},
@@ -34,6 +35,7 @@ func (x *Range) Flags() []cli.Flag {
 			Sources:     cli.EnvVars("HATCHERY_END_TIME"),
 			Usage:       "End time to load data",
 			Destination: &x.end,
+			Value:       now,
 			Config: cli.TimestampConfig{
 				Layouts: []string{time.RFC3339, time.RFC3339Nano},
 			},
@@ -43,39 +45,30 @@ func (x *Range) Flags() []cli.Flag {
 			Category:    "Time Range",
 			Aliases:     []string{"d"},
 			Sources:     cli.EnvVars("HATCHERY_TICK"),
-			Usage:       "Tick interval to load data",
+			Usage:       "Tick interval to load data. If not set, do not loop",
 			Destination: &x.tick,
-			Value:       time.Second,
 		},
 	}
 }
 
 func (x *Range) Validate() error {
-	if !x.start.IsZero() && !x.end.IsZero() && x.tick > 0 {
-		return nil
-	}
-	if x.start.Before(x.end) {
+	if x.start.After(x.end) {
 		return goerr.New("start-time is after end-time")
-	}
-
-	if !x.start.IsZero() || !x.end.IsZero() || x.tick > 0 {
-		return goerr.New("Some of start-time, end-time, and tick are not set")
 	}
 
 	return nil
 }
 
-func (x *Range) IsEnable(ctx context.Context) bool {
-	return !x.start.IsZero() && !x.end.IsZero() && x.tick > 0
-}
-
 func (x *Range) Generate(yield func(time.Time) bool) {
-	if x.start.IsZero() || x.end.IsZero() || x.tick == 0 {
-		panic("Range.Generate is called without setting start-time, end-time, and tick")
+	// If tick is not set, return value only once.
+	if x.tick == 0 {
+		yield(x.start)
+		return
 	}
 
-	for t := x.start; t.Before(x.end); t = t.Add(x.tick) {
-		if !yield(t.Add(x.tick)) {
+	println(x.start.After(x.end))
+	for t := x.start; !t.After(x.end); t = t.Add(x.tick) {
+		if !yield(t) {
 			return
 		}
 	}

@@ -3,7 +3,6 @@ package hatchery
 import (
 	"context"
 	"log/slog"
-	"time"
 
 	"github.com/m-mizutani/goerr"
 	"github.com/secmon-lab/hatchery/pkg/config"
@@ -18,7 +17,6 @@ func (h *Hatchery) CLI(argv []string) error {
 		streamIDs []string
 		tags      []string
 		forAll    bool
-		baseTime  time.Time
 
 		cfgRange   config.Range
 		cfgLogging config.Logging
@@ -45,17 +43,6 @@ func (h *Hatchery) CLI(argv []string) error {
 			Sources:     cli.EnvVars("HATCHERY_STREAM_ALL"),
 			Usage:       "Run all streams",
 			Destination: &forAll,
-		},
-
-		&cli.TimestampFlag{
-			Name:        "base-time",
-			Aliases:     []string{"b"},
-			Sources:     cli.EnvVars("HATCHERY_BASE_TIME"),
-			Usage:       "Base time to load data. Default is current time",
-			Destination: &baseTime,
-			Config: cli.TimestampConfig{
-				Layouts: []string{time.RFC3339, time.RFC3339Nano},
-			},
 		},
 	}
 
@@ -100,13 +87,6 @@ func (h *Hatchery) CLI(argv []string) error {
 
 			if err := cfgRange.Validate(); err != nil {
 				return err
-			}
-
-			if !cfgRange.IsEnable(ctx) {
-				if t := baseTime; !t.IsZero() {
-					ctx = timestamp.InjectCtx(ctx, t)
-				}
-				return h.Run(ctx, selectors...)
 			}
 
 			for t := range cfgRange.Generate {

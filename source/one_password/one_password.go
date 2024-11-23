@@ -88,8 +88,13 @@ func New(apiToken secret.String, opts ...Option) hatchery.Source {
 		logger.Info("New source (1Password)", "config", x, "base_time", now)
 		ctx = logging.InjectCtx(ctx, logger)
 
+		slug, err := metadata.RandomSlug()
+		if err != nil {
+			return goerr.Wrap(err, "failed to generate random slug")
+		}
+
 		for seq := 0; x.MaxPages == 0 || seq < x.MaxPages; seq++ {
-			cursor, err := x.crawl(ctx, p, now, seq, nextCursor)
+			cursor, err := x.crawl(ctx, p, now, seq, nextCursor, slug)
 			if err != nil {
 				return goerr.Wrap(err, "failed to crawl 1Password logs").With("seq", seq).With("cursor", nextCursor)
 			}
@@ -103,7 +108,7 @@ func New(apiToken secret.String, opts ...Option) hatchery.Source {
 	}
 }
 
-func (x *config) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq int, cursor string) (*string, error) {
+func (x *config) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq int, cursor, slug string) (*string, error) {
 	startTime := end.Add(-x.Duration)
 	var body []byte
 	if cursor != "" {
@@ -157,6 +162,7 @@ func (x *config) crawl(ctx context.Context, p *hatchery.Pipe, end time.Time, seq
 		metadata.WithTimestamp(end),
 		metadata.WithSeq(seq),
 		metadata.WithFormat(types.FmtJSON),
+		metadata.WithSlug(slug),
 	)
 
 	if err := p.Spout(ctx, bytes.NewReader(body), md); err != nil {
