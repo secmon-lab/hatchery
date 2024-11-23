@@ -9,7 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/m-mizutani/clog"
 	"github.com/m-mizutani/goerr"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 )
 
 type Logging struct {
@@ -24,7 +24,7 @@ func (x *Logging) Flags() []cli.Flag {
 			Name:        "log-format",
 			Category:    "Logging",
 			Aliases:     []string{"f"},
-			EnvVars:     []string{"HATCHERY_LOG_FORMAT"},
+			Sources:     cli.EnvVars("HATCHERY_LOG_FORMAT"),
 			Usage:       "Log format (json, text)",
 			Value:       "json",
 			Destination: &x.format,
@@ -33,7 +33,7 @@ func (x *Logging) Flags() []cli.Flag {
 			Name:        "log-level",
 			Category:    "Logging",
 			Aliases:     []string{"l"},
-			EnvVars:     []string{"HATCHERY_LOG_LEVEL"},
+			Sources:     cli.EnvVars("HATCHERY_LOG_LEVEL"),
 			Usage:       "Log level (debug, info, warn, error)",
 			Value:       "info",
 			Destination: &x.level,
@@ -42,7 +42,7 @@ func (x *Logging) Flags() []cli.Flag {
 			Name:        "log-out",
 			Category:    "Logging",
 			Aliases:     []string{"o"},
-			EnvVars:     []string{"HATCHERY_LOG_OUT"},
+			Sources:     cli.EnvVars("HATCHERY_LOG_OUT"),
 			Usage:       "Log output (stdout or stderr)",
 			Value:       "stdout",
 			Destination: &x.out,
