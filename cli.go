@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/m-mizutani/goerr"
+	"github.com/secmon-lab/hatchery/pkg/config"
 	"github.com/secmon-lab/hatchery/pkg/logging"
 	"github.com/secmon-lab/hatchery/pkg/timestamp"
 	"github.com/urfave/cli/v2"
@@ -18,71 +19,81 @@ func (h *Hatchery) CLI(argv []string) error {
 		forAll    bool
 		baseTime  cli.Timestamp
 
-		logFormat string
-		logLevel  string
-		logOut    string
+		startTime cli.Timestamp
+		endTime   cli.Timestamp
+		tick      time.Duration
+
+		cfgLogging config.Logging
 	)
+
+	flags := []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:        "stream-id",
+			Aliases:     []string{"i"},
+			EnvVars:     []string{"HATCHERY_STREAM_ID"},
+			Usage:       "Target stream ID, multiple IDs can be specified",
+			Destination: &streamIDs,
+		},
+		&cli.StringSliceFlag{
+			Name:        "stream-tag",
+			Aliases:     []string{"t"},
+			EnvVars:     []string{"HATCHERY_STREAM_TAG"},
+			Usage:       "Tag for the stream, multiple tags can be specified",
+			Destination: &tags,
+		},
+		&cli.BoolFlag{
+			Name:        "stream-all",
+			Aliases:     []string{"a"},
+			EnvVars:     []string{"HATCHERY_STREAM_ALL"},
+			Usage:       "Run all streams",
+			Destination: &forAll,
+		},
+
+		&cli.TimestampFlag{
+			Name:        "base-time",
+			Aliases:     []string{"b"},
+			EnvVars:     []string{"HATCHERY_BASE_TIME"},
+			Usage:       "Base time to load data. Default is current time",
+			Destination: &baseTime,
+			Layout:      time.RFC3339,
+		},
+
+		&cli.TimestampFlag{
+			Name:        "start-time",
+			Category:    "Time Range",
+			Aliases:     []string{"s"},
+			EnvVars:     []string{"HATCHERY_START_TIME"},
+			Usage:       "Start time to load data",
+			Destination: &startTime,
+			Layout:      time.RFC3339,
+		},
+		&cli.TimestampFlag{
+			Name:        "end-time",
+			Category:    "Time Range",
+			Aliases:     []string{"e"},
+			EnvVars:     []string{"HATCHERY_END_TIME"},
+			Usage:       "End time to load data",
+			Destination: &endTime,
+			Layout:      time.RFC3339,
+		},
+		&cli.DurationFlag{
+			Name:        "tick",
+			Category:    "Time Range",
+			Aliases:     []string{"d"},
+			EnvVars:     []string{"HATCHERY_TICK"},
+			Usage:       "Tick duration to load data",
+			Value:       time.Minute,
+			Destination: &tick,
+		},
+	}
+
+	flags = append(flags, cfgLogging.Flags()...)
 
 	app := &cli.App{
 		Name:  "hatchery",
 		Usage: "A tool to load log data from various sources for security",
-		Flags: []cli.Flag{
-			&cli.StringSliceFlag{
-				Name:        "stream-id",
-				Aliases:     []string{"i"},
-				EnvVars:     []string{"HATCHERY_STREAM_ID"},
-				Usage:       "Target stream ID, multiple IDs can be specified",
-				Destination: &streamIDs,
-			},
-			&cli.StringSliceFlag{
-				Name:        "stream-tag",
-				Aliases:     []string{"t"},
-				EnvVars:     []string{"HATCHERY_STREAM_TAG"},
-				Usage:       "Tag for the stream, multiple tags can be specified",
-				Destination: &tags,
-			},
-			&cli.BoolFlag{
-				Name:        "stream-all",
-				Aliases:     []string{"a"},
-				EnvVars:     []string{"HATCHERY_STREAM_ALL"},
-				Usage:       "Run all streams",
-				Destination: &forAll,
-			},
+		Flags: flags,
 
-			&cli.TimestampFlag{
-				Name:        "base-time",
-				Aliases:     []string{"b"},
-				EnvVars:     []string{"HATCHERY_BASE_TIME"},
-				Usage:       "Base time to load data. Default is current time",
-				Destination: &baseTime,
-				Layout:      time.RFC3339,
-			},
-
-			&cli.StringFlag{
-				Name:        "log-format",
-				Aliases:     []string{"f"},
-				EnvVars:     []string{"HATCHERY_LOG_FORMAT"},
-				Usage:       "Log format (json, text)",
-				Value:       "json",
-				Destination: &logFormat,
-			},
-			&cli.StringFlag{
-				Name:        "log-level",
-				Aliases:     []string{"l"},
-				EnvVars:     []string{"HATCHERY_LOG_LEVEL"},
-				Usage:       "Log level (debug, info, warn, error)",
-				Value:       "info",
-				Destination: &logLevel,
-			},
-			&cli.StringFlag{
-				Name:        "log-out",
-				Aliases:     []string{"o"},
-				EnvVars:     []string{"HATCHERY_LOG_OUT"},
-				Usage:       "Log output (stdout or stderr)",
-				Value:       "stdout",
-				Destination: &logOut,
-			},
-		},
 		Action: func(c *cli.Context) error {
 			selectors := []Selector{}
 			if forAll {
@@ -97,12 +108,13 @@ func (h *Hatchery) CLI(argv []string) error {
 
 			var logger *slog.Logger
 			if h.loggerIsDefault {
-				newLogger, err := buildLogger(logLevel, logFormat, logOut)
+				newLogger, closer, err := cfgLogging.Build()
 				if err != nil {
 					return err
 				}
+				defer closer()
 				logger = newLogger
-				logger.Info("Logger is initialized", "level", logLevel, "format", logFormat, "output", logOut)
+				logger.Info("Logger is initialized", "config", cfgLogging)
 			} else {
 				logger = h.logger
 				logger.Info("Logger is used from option")
