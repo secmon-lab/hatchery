@@ -43,7 +43,7 @@ func New(accessToken secret.String, options ...Option) hatchery.Source {
 		AccessToken: accessToken,
 		httpClient:  http.DefaultClient,
 		Duration:    10 * time.Minute,
-		Limit:       100,
+		Limit:       1000,
 		MaxPages:    0,
 	}
 
@@ -56,7 +56,7 @@ func New(accessToken secret.String, options ...Option) hatchery.Source {
 		now := timestamp.FromCtx(ctx)
 
 		logger := logging.FromCtx(ctx).With("source", "slack")
-		logger.Info("New source (Slack)", "config", c)
+		logger.Info("New source (Slack)", "config", c, "base_time", now)
 		ctx = logging.InjectCtx(ctx, logger)
 
 		for seq := 0; c.MaxPages == 0 || seq < c.MaxPages; seq++ {
@@ -83,7 +83,7 @@ func WithMaxPages(MaxPages int) Option {
 	}
 }
 
-// WithLimit sets the number of logs to read in a single request.
+// WithLimit sets the number of logs to read in a single request. If it's set to 0 or negative value, "limit" parameter is not included in the request. Default is 1000.
 func WithLimit(limit int) Option {
 	return func(c *config) {
 		c.Limit = limit
@@ -114,8 +114,13 @@ const (
 func (x *config) crawl(ctx context.Context, end time.Time, seq int, cursor string, p *hatchery.Pipe) (*string, error) {
 	startTime := end.Add(-x.Duration)
 	qv := url.Values{}
-	qv.Add("limit", fmt.Sprintf("%d", x.Limit))
+	if x.Limit > 0 {
+		qv.Add("limit", fmt.Sprintf("%d", x.Limit))
+	}
 	qv.Add("oldest", fmt.Sprintf("%d", startTime.Unix()))
+	qv.Add("latest", fmt.Sprintf("%d", end.Unix()))
+
+	logging.FromCtx(ctx).Debug("Request Slack API", "url", baseURL, "cursor", cursor, "seq", seq, "limit", x.Limit, "oldest", startTime, "latest", end)
 
 	if cursor != "" {
 		qv.Add("cursor", cursor)
