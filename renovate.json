@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["gomod"],
+      "enabled": true
+    }
+  ],
+  "updateNotScheduled": false,
+  "schedule": ["after 10pm every weekday", "before 5am every weekday"],
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 5
+}
